@@ -1,6 +1,6 @@
 // cloud-run/email-template-api/emails/SalesNotification.js
-// Gmail-safe (no Tailwind/JS). Table-based + inline styles.
-// Weekly Update template for Hushh Technologies
+// Gmail-safe: NO Tailwind, NO JS. Table-based + inline styles.
+// Layout/text matches the provided "Hushh Technologies — Weekly Update" template.
 
 const escapeHtml = (val = "") =>
   String(val)
@@ -19,14 +19,14 @@ const stripHtml = (val = "") =>
 export function SalesNotification(input = {}) {
   const d = input || {};
 
-  // Palette (from Tailwind config)
+  // Palette from your Tailwind config
   const C = {
     primary: "#0088cc",
-    bgLight: "#f5f7f8",
-    bgDark: "#0f1c23",
+    backgroundLight: "#f5f7f8",
+    backgroundDark: "#0f1c23",
     cardDark: "#16252e",
+
     white: "#ffffff",
-    black: "#0c171d",
     gray900: "#111827",
     gray800: "#1f2937",
     gray700: "#374151",
@@ -36,21 +36,19 @@ export function SalesNotification(input = {}) {
     gray300: "#d1d5db",
     gray200: "#e5e7eb",
     gray100: "#f3f4f6",
+
     borderLight: "#f3f4f6",
-    borderDark: "#1f2a33"
   };
 
-  // Content defaults
+  // Defaults = EXACT text/content from your HTML
   const subject = escapeHtml(d.subject ?? "Hushh Technologies — Weekly Update");
-  const previewText = escapeHtml(
-    d.previewText ?? "Weekly Update — The Future of Investment Management"
-  );
+  const previewText = escapeHtml(d.previewText ?? "AI-Driven Future — The Future of Investment Management");
 
-  const viewInBrowserUrl = escapeHtml(d.viewInBrowserUrl ?? "https://www.hushhtech.com/");
   const viewInBrowserText = escapeHtml(d.viewInBrowserText ?? "View in browser");
+  const viewInBrowserUrl = escapeHtml(d.viewInBrowserUrl ?? "https://www.hushhtech.com/");
 
-  const brandName = escapeHtml(d.brandName ?? "Hushh");
-  const headerTag = escapeHtml(d.headerTag ?? "Weekly Update");
+  const brand = escapeHtml(d.brand ?? "Hushh");
+  const headerRight = escapeHtml(d.headerRight ?? "Weekly Update");
 
   // Hushh logo from Supabase storage
   const heroImageUrl = escapeHtml(
@@ -78,29 +76,23 @@ export function SalesNotification(input = {}) {
   );
 
   const valuesTitle = escapeHtml(d.valuesTitle ?? "Core Values");
-  const coreValues = (Array.isArray(d.coreValues) && d.coreValues.length
-    ? d.coreValues
-    : [
-        {
-          iconLabel: "visibility",
-          title: "Transparency",
-          desc: "Clear insights into every decision our algorithms make."
-        },
-        {
-          iconLabel: "psychology",
-          title: "Innovation",
-          desc: "Constant evolution of our models to stay ahead."
-        },
-        {
-          iconLabel: "shield",
-          title: "Security",
-          desc: "Bank-grade encryption protecting your assets."
-        }
-      ]
-  ).map((v) => ({
-    title: escapeHtml(v.title ?? ""),
-    desc: escapeHtml(v.desc ?? "")
-  }));
+  const values =
+    Array.isArray(d.values) && d.values.length
+      ? d.values
+      : [
+          {
+            title: "Transparency",
+            desc: "Clear insights into every decision our algorithms make.",
+          },
+          {
+            title: "Innovation",
+            desc: "Constant evolution of our models to stay ahead.",
+          },
+          {
+            title: "Security",
+            desc: "Bank-grade encryption protecting your assets.",
+          },
+        ];
 
   const approachTitle = escapeHtml(d.approachTitle ?? "Our Approach");
   const approachBody = escapeHtml(
@@ -116,15 +108,29 @@ export function SalesNotification(input = {}) {
   const whyButtonText = escapeHtml(d.whyButtonText ?? "Start Your Journey");
   const whyButtonUrl = escapeHtml(d.whyButtonUrl ?? "https://calendly.com/hushh");
 
-  const ctaTitle = escapeHtml(d.ctaTitle ?? "Ready to take the next step?");
-  const ctaBody = escapeHtml(
-    d.ctaBody ??
+  const whyBgUrl = escapeHtml(
+    d.whyBgUrl ??
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCQOAZ6GvP-sT11v46eTnUL9BIn5ZuBEDQcZ1P6gcx8sBb0_A2gd31fzFhvQNT141qy4hhEISZqtvAVy10Bme1tZVf-4HJbxIZOMjuWyYysjDCiSdWTYwWJ0_tNhQlaOwJVmR_No9WkPpqpOhW_0_CNt7j0kCtjHbZSolY3hP45V1T969K9KMl6xCuzZ0IWnc0wtXI8HXs8eXaoDydLjwkPSw7oHVtihAqqawLjsJgKGfcScZAgqzXNupfpu85JIEbewqPYi9M"
+  );
+
+  const bottomCtaTitle = escapeHtml(d.bottomCtaTitle ?? "Ready to take the next step?");
+  const bottomCtaBody = escapeHtml(
+    d.bottomCtaBody ??
       "Explore our advanced algorithms or connect directly with our investment team today."
   );
   const ctaLeftText = escapeHtml(d.ctaLeftText ?? "Learn More");
   const ctaLeftUrl = escapeHtml(d.ctaLeftUrl ?? "https://www.hushhtech.com/");
   const ctaRightText = escapeHtml(d.ctaRightText ?? "Connect Now");
   const ctaRightUrl = escapeHtml(d.ctaRightUrl ?? "https://calendly.com/hushh");
+
+  const socialLinks =
+    Array.isArray(d.socialLinks) && d.socialLinks.length
+      ? d.socialLinks
+      : [
+          { label: "Website", url: "https://www.hushhtech.com/" },
+          { label: "Email", url: "mailto:hello@hushh.ai" },
+          { label: "Calendly", url: "https://calendly.com/hushh" },
+        ];
 
   const footerAddress = escapeHtml(
     d.footerAddress ?? "Hushh Technologies, 123 Innovation Drive, Tech City, TC 90210"
@@ -137,63 +143,56 @@ export function SalesNotification(input = {}) {
   const privacyText = escapeHtml(d.privacyText ?? "Privacy Policy");
   const privacyUrl = escapeHtml(d.privacyUrl ?? "https://www.hushhtech.com/");
 
-  const social = (Array.isArray(d.social) && d.social.length
-    ? d.social
-    : [
-        { label: "Website", url: "https://www.hushhtech.com/" },
-        { label: "Email", url: "mailto:hello@hushh.ai" },
-        { label: "Calendly", url: "https://calendly.com/hushh" }
-      ]
-  ).map((s) => ({ label: escapeHtml(s.label ?? ""), url: escapeHtml(s.url ?? "#") }));
-
-  const socialIconsRow = social
+  const valuesCells = values
     .slice(0, 3)
-    .map(
-      (s) => `
-        <td align="center" style="padding:0 8px;">
-          <a href="${s.url}" target="_blank" style="display:inline-block;text-decoration:none;color:${C.gray400};font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:14px;">
-            ●
-          </a>
-        </td>
-      `
-    )
-    .join("");
-
-  // Core values as 3 columns (email-safe)
-  const valuesCols = coreValues
-    .slice(0, 3)
-    .map(
-      (v) => `
-        <td valign="top" align="center" style="padding:0 8px;">
+    .map((v) => {
+      const title = escapeHtml(v.title ?? "");
+      const desc = escapeHtml(v.desc ?? "");
+      return `
+        <td valign="top" align="center" style="padding:0 10px 0 10px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
             <tr>
               <td align="center" style="padding-bottom:10px;">
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="48" height="48" style="width:48px;height:48px;border-radius:999px;background-color:rgba(0,136,204,0.10);">
                   <tr>
                     <td align="center" valign="middle" style="font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:18px;color:${C.primary};font-weight:900;">
-                      •
+                      ●
                     </td>
                   </tr>
                 </table>
               </td>
             </tr>
             <tr>
-              <td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:16px;color:${C.gray900};font-weight:800;padding-bottom:6px;">
-                ${v.title}
+              <td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:16px;color:${C.gray900};font-weight:900;padding-bottom:6px;">
+                ${title}
               </td>
             </tr>
             <tr>
               <td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:16px;color:${C.gray500};">
-                ${v.desc}
+                ${desc}
               </td>
             </tr>
           </table>
         </td>
-      `
-    )
+      `;
+    })
     .join("");
 
-  // Email HTML
+  const socialCells = socialLinks
+    .slice(0, 3)
+    .map((s) => {
+      const url = escapeHtml(s.url ?? "#");
+      // Gmail-safe icon substitute
+      return `
+        <td align="center" style="padding:0 10px;">
+          <a href="${url}" target="_blank" style="text-decoration:none;color:${C.gray400};font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:18px;">
+            ●
+          </a>
+        </td>
+      `;
+    })
+    .join("");
+
   const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -202,13 +201,14 @@ export function SalesNotification(input = {}) {
     <meta name="x-apple-disable-message-reformatting" />
     <title>${subject}</title>
   </head>
-  <body style="margin:0;padding:0;background-color:${C.bgLight};">
+  <body style="margin:0;padding:0;background-color:${C.backgroundLight};">
+    <!-- Preheader -->
     <div style="display:none;font-size:1px;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;mso-hide:all;">
       ${previewText}
     </div>
 
     <!-- View in browser -->
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${C.bgLight};">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${C.backgroundLight};">
       <tr>
         <td align="center" style="padding:14px 12px 10px 12px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:600px;">
@@ -222,31 +222,31 @@ export function SalesNotification(input = {}) {
       </tr>
     </table>
 
-    <!-- Card -->
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${C.bgLight};">
+    <!-- Main card -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${C.backgroundLight};">
       <tr>
         <td align="center" style="padding:0 12px 40px 12px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:600px;background-color:${C.white};border-radius:12px;overflow:hidden;border:1px solid ${C.borderLight};box-shadow:0 14px 30px rgba(0,0,0,0.10);">
-            
-            <!-- Top bar -->
+
+            <!-- Header bar -->
             <tr>
               <td style="padding:24px 24px 18px 24px;border-bottom:1px solid ${C.borderLight};background-color:${C.white};">
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                   <tr>
-                    <td align="left" style="padding:0;">
+                    <td align="left">
                       <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                         <tr>
                           <td valign="middle" style="padding-right:10px;">
                             <img src="https://ibsisfnjxeowvdtvgzff.supabase.co/storage/v1/object/public/assets/hushh-logo.png" alt="Hushh" width="32" height="32" style="display:block;border:0;outline:none;text-decoration:none;width:32px;height:32px;border-radius:8px;" />
                           </td>
                           <td valign="middle" style="font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:22px;color:${C.gray900};font-weight:900;letter-spacing:-0.4px;">
-                            ${brandName}<span style="color:${C.primary};">.</span>
+                            ${brand}<span style="color:${C.primary};">.</span>
                           </td>
                         </tr>
                       </table>
                     </td>
-                    <td align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:16px;color:${C.gray400};font-weight:600;">
-                      ${headerTag}
+                    <td align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:16px;color:${C.gray400};font-weight:700;">
+                      ${headerRight}
                     </td>
                   </tr>
                 </table>
@@ -269,6 +269,7 @@ export function SalesNotification(input = {}) {
             <!-- Body -->
             <tr>
               <td style="padding:32px 32px 10px 32px;">
+
                 <!-- Badge -->
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 14px auto;">
                   <tr>
@@ -295,23 +296,21 @@ export function SalesNotification(input = {}) {
                 <div style="height:18px;line-height:18px;">&nbsp;</div>
 
                 <!-- Who we are -->
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:26px;color:${C.gray900};font-weight:800;letter-spacing:-0.2px;margin:0 0 8px 0;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:26px;color:${C.gray900};font-weight:900;letter-spacing:-0.2px;margin:0 0 8px 0;">
                   ${whoTitle}
                 </div>
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:26px;color:${C.gray600};margin:0 0 18px 0;">
                   ${whoBody}
                 </div>
 
-                <!-- Inspiration block -->
+                <!-- Inspiration -->
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${C.gray100};border-radius:10px;border:1px solid ${C.borderLight};">
                   <tr>
                     <td style="padding:16px 16px 14px 16px;">
                       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                         <tr>
-                          <td align="left" style="padding:0 0 6px 0;">
-                            <span style="font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:20px;color:${C.gray900};font-weight:800;">
-                              ${inspTitle}
-                            </span>
+                          <td style="padding:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:20px;color:${C.gray900};font-weight:900;">
+                            ${inspTitle}
                           </td>
                         </tr>
                         <tr>
@@ -327,28 +326,42 @@ export function SalesNotification(input = {}) {
                 <div style="height:20px;line-height:20px;">&nbsp;</div>
 
                 <!-- Core Values -->
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:26px;color:${C.gray900};font-weight:800;letter-spacing:-0.2px;text-align:center;margin:0 0 14px 0;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:26px;color:${C.gray900};font-weight:900;letter-spacing:-0.2px;text-align:center;margin:0 0 14px 0;">
                   ${valuesTitle}
                 </div>
 
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                   <tr>
-                    ${valuesCols}
+                    ${valuesCells}
                   </tr>
                 </table>
 
                 <div style="height:20px;line-height:20px;">&nbsp;</div>
 
                 <!-- Our Approach -->
-                <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:26px;color:${C.gray900};font-weight:800;letter-spacing:-0.2px;margin:0 0 8px 0;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:26px;color:${C.gray900};font-weight:900;letter-spacing:-0.2px;margin:0 0 8px 0;">
                   ${approachTitle}
                 </div>
                 <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:26px;color:${C.gray600};margin:0 0 16px 0;">
                   ${approachBody}
                 </div>
 
-                <!-- Why block (blue) -->
+                <!-- Why block -->
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:${C.primary};border-radius:12px;overflow:hidden;">
+                  <tr>
+                    <td style="padding:0;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                        <tr>
+                          <td style="padding:0;background-color:${C.primary};">
+                            <!-- background image (fallback-safe as image) -->
+                            <div style="background-image:url('${whyBgUrl}');background-size:cover;background-position:center;opacity:0.10;height:100px;line-height:100px;font-size:0;">
+                              &nbsp;
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
                   <tr>
                     <td style="padding:22px 18px;text-align:center;">
                       <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:24px;color:#ffffff;font-weight:900;margin:0 0 10px 0;">
@@ -371,10 +384,10 @@ export function SalesNotification(input = {}) {
                   <tr>
                     <td style="padding:18px 0 0 0;text-align:center;">
                       <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:26px;color:${C.gray900};font-weight:900;margin:0 0 8px 0;">
-                        ${ctaTitle}
+                        ${bottomCtaTitle}
                       </div>
                       <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:${C.gray500};margin:0 0 14px 0;max-width:420px;margin-left:auto;margin-right:auto;">
-                        ${ctaBody}
+                        ${bottomCtaBody}
                       </div>
 
                       <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
@@ -399,12 +412,12 @@ export function SalesNotification(input = {}) {
               </td>
             </tr>
 
-            <!-- Footer strip -->
+            <!-- Footer -->
             <tr>
               <td style="padding:20px 22px;background-color:${C.gray100};border-top:1px solid ${C.borderLight};text-align:center;">
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 14px auto;">
                   <tr>
-                    ${socialIconsRow}
+                    ${socialCells}
                   </tr>
                 </table>
 
@@ -431,7 +444,7 @@ export function SalesNotification(input = {}) {
 </html>`;
 
   const text = [
-    `${stripHtml(brandName)}. — ${stripHtml(headerTag)}`,
+    `${stripHtml(brand)}. — ${stripHtml(headerRight)}`,
     "",
     stripHtml(heroTitle),
     stripHtml(heroBody),
@@ -440,17 +453,22 @@ export function SalesNotification(input = {}) {
     "",
     `${stripHtml(inspTitle)}\n${stripHtml(inspBody)}`,
     "",
-    `${stripHtml(valuesTitle)}\n- ${coreValues.map((v) => `${stripHtml(v.title)}: ${stripHtml(v.desc)}`).join("\n- ")}`,
+    `${stripHtml(valuesTitle)}\n- ${values
+      .slice(0, 3)
+      .map((v) => `${stripHtml(v.title)}: ${stripHtml(v.desc)}`)
+      .join("\n- ")}`,
     "",
     `${stripHtml(approachTitle)}\n${stripHtml(approachBody)}`,
     "",
     `${stripHtml(whyTitle)}\n${stripHtml(whyBody)}\n${stripHtml(whyButtonText)}: ${stripHtml(whyButtonUrl)}`,
     "",
-    `${stripHtml(ctaTitle)}\n${stripHtml(ctaBody)}\n${stripHtml(ctaLeftText)}: ${stripHtml(ctaLeftUrl)}\n${stripHtml(ctaRightText)}: ${stripHtml(ctaRightUrl)}`,
+    `${stripHtml(bottomCtaTitle)}\n${stripHtml(bottomCtaBody)}\n${stripHtml(ctaLeftText)}: ${stripHtml(
+      ctaLeftUrl
+    )}\n${stripHtml(ctaRightText)}: ${stripHtml(ctaRightUrl)}`,
     "",
     stripHtml(footerAddress),
     stripHtml(footerReason),
-    `${stripHtml(unsubscribeText)}: ${stripHtml(unsubscribeUrl)} | ${stripHtml(privacyText)}: ${stripHtml(privacyUrl)}`
+    `${stripHtml(unsubscribeText)}: ${stripHtml(unsubscribeUrl)} | ${stripHtml(privacyText)}: ${stripHtml(privacyUrl)}`,
   ].join("\n");
 
   return { subject, html, text };

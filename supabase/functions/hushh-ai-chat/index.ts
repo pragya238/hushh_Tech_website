@@ -295,18 +295,33 @@ serve(async (req: Request) => {
       
       console.log('Calendar intent detected! Message:', message);
       console.log('Organizer email:', organizerEmail);
-      
-      // Create the calendar event
-      const calendarResult = await createCalendarEvent({
+
+      // Create the calendar event with retry logic
+      let calendarResult = await createCalendarEvent({
         message,
         organizerEmail,
       });
-      
+
+      // Retry once if initial attempt failed
+      if (!calendarResult.success) {
+        console.log('Calendar creation failed, retrying after 1 second...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        calendarResult = await createCalendarEvent({
+          message,
+          organizerEmail,
+        });
+      }
+
       // Format the response
       const calendarResponse = formatEventResponse(calendarResult);
-      
+
       // Track calendar event creation
-      await trackUsage('calendar_event_created');
+      if (calendarResult.success) {
+        await trackUsage('calendar_event_created');
+      } else {
+        await trackUsage('calendar_event_failed');
+        console.error('Calendar event creation failed after retry:', calendarResult.error);
+      }
       
       // Cache the response
       if (chatId) {

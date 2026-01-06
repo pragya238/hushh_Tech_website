@@ -158,7 +158,7 @@ function parseDateTime(text: string): { startDateTime: string; endDateTime: stri
     startDate.setHours(10, 0, 0, 0);
   }
 
-  // Check for duration
+  // Check for duration - intelligent estimation
   const durationMatch = text.match(/(\d+)\s*(hour|hr|minute|min)/i);
   if (durationMatch) {
     const value = parseInt(durationMatch[1]);
@@ -168,6 +168,24 @@ function parseDateTime(text: string): { startDateTime: string; endDateTime: stri
     } else {
       duration = value;
     }
+  } else {
+    // Intelligent defaults based on meeting context
+    const lower = text.toLowerCase();
+
+    if (lower.includes('standup') || lower.includes('daily sync') || lower.includes('quick sync')) {
+      duration = 15;
+    } else if (lower.includes('interview') || lower.includes('screening')) {
+      duration = 60;
+    } else if (lower.includes('demo') || lower.includes('presentation')) {
+      duration = 45;
+    } else if (lower.includes('brainstorm') || lower.includes('workshop') || lower.includes('planning')) {
+      duration = 90;
+    } else if (lower.includes('1:1') || lower.includes('one-on-one') || lower.includes('1-1')) {
+      duration = 30;
+    } else if (lower.includes('lunch') || lower.includes('coffee')) {
+      duration = 60;
+    }
+    // Default 30 min if no context found
   }
 
   const endDate = new Date(startDate.getTime() + duration * 60000);
@@ -179,11 +197,154 @@ function parseDateTime(text: string): { startDateTime: string; endDateTime: stri
 }
 
 /**
- * Extract email addresses from text
+ * Extract and validate email addresses from text
  */
 function extractEmails(text: string): string[] {
-  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  return text.match(emailRegex) || [];
+  const emailRegex = /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g;
+  const matches = text.match(emailRegex) || [];
+
+  // Validate and filter emails
+  return matches.filter(email => {
+    // Basic validation
+    const parts = email.split('@');
+    if (parts.length !== 2) return false;
+
+    const [local, domain] = parts;
+
+    // Check local part
+    if (local.length === 0 || local.length > 64) return false;
+
+    // Check domain part
+    if (domain.length < 3 || domain.length > 255) return false;
+    if (!domain.includes('.')) return false;
+
+    // Check for valid TLD
+    const domainParts = domain.split('.');
+    const tld = domainParts[domainParts.length - 1];
+    if (tld.length < 2) return false;
+
+    // Reject emails with consecutive dots or invalid characters
+    if (email.includes('..')) return false;
+
+    return true;
+  });
+}
+
+/**
+ * Generate a meaningful meeting title from the message
+ */
+function generateMeetingTitle(message: string, attendees: string[]): string {
+  const lower = message.toLowerCase();
+
+  // Extract topic keywords
+  const topicPatterns = [
+    { pattern: /\b(discuss|discussing|talk about|review)\s+(.+?)\s+(with|tomorrow|today|on|at|@)/i, group: 2 },
+    { pattern: /\b(demo|presentation|showcase)\s+(.+?)\s+(with|for|to|tomorrow|today|on|at|@)/i, group: 2 },
+    { pattern: /\b(planning|plan)\s+(.+?)\s+(with|tomorrow|today|on|at|@)/i, group: 2 },
+    { pattern: /\b(interview|screening)\s+(.+?)\s+(with|for|tomorrow|today|on|at|@)/i, group: 2 },
+  ];
+
+  for (const { pattern, group } of topicPatterns) {
+    const match = message.match(pattern);
+    if (match && match[group]) {
+      const topic = match[group].trim();
+      // Capitalize first letter
+      return topic.charAt(0).toUpperCase() + topic.slice(1);
+    }
+  }
+
+  // Check for common meeting types
+  if (lower.includes('standup') || lower.includes('daily sync')) {
+    return 'Daily Standup';
+  }
+  if (lower.includes('1:1') || lower.includes('one-on-one') || lower.includes('1-1')) {
+    if (attendees.length > 0) {
+      const name = attendees[0].split('@')[0];
+      return `1:1 with ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+    }
+    return '1:1 Meeting';
+  }
+  if (lower.includes('interview')) {
+    return 'Interview';
+  }
+  if (lower.includes('demo')) {
+    return 'Product Demo';
+  }
+  if (lower.includes('brainstorm')) {
+    return 'Brainstorming Session';
+  }
+  if (lower.includes('retrospective') || lower.includes('retro')) {
+    return 'Sprint Retrospective';
+  }
+
+  // Fallback: Use attendee names
+  if (attendees.length > 0) {
+    const attendeeNames = attendees.map(e => {
+      const name = e.split('@')[0];
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    }).join(', ');
+
+    if (attendees.length === 1) {
+      return `Meeting with ${attendeeNames}`;
+    } else if (attendees.length === 2) {
+      return `Meeting with ${attendeeNames}`;
+    } else {
+      return `Team Meeting (${attendees.length} attendees)`;
+    }
+  }
+
+  return 'Meeting';
+}
+
+/**
+ * Generate a rich meeting description from the message
+ */
+function generateMeetingDescription(message: string, attendees: string[], summary: string): string {
+  const lower = message.toLowerCase();
+  let description = '';
+
+  // Add meeting purpose based on context
+  if (lower.includes('discuss') || lower.includes('review')) {
+    description += '📋 **Meeting Purpose:** Discussion and review\n\n';
+  } else if (lower.includes('demo') || lower.includes('presentation')) {
+    description += '📋 **Meeting Purpose:** Demo and presentation\n\n';
+  } else if (lower.includes('interview')) {
+    description += '📋 **Meeting Purpose:** Interview session\n\n';
+  } else if (lower.includes('brainstorm') || lower.includes('planning')) {
+    description += '📋 **Meeting Purpose:** Planning and brainstorming\n\n';
+  } else if (lower.includes('standup')) {
+    description += '📋 **Meeting Purpose:** Daily standup sync\n\n';
+  }
+
+  // Add attendees list if multiple people
+  if (attendees.length > 1) {
+    description += `👥 **Attendees:** ${attendees.join(', ')}\n\n`;
+  }
+
+  // Add suggested agenda for certain meeting types
+  if (lower.includes('standup')) {
+    description += '**Agenda:**\n';
+    description += '• What did you work on yesterday?\n';
+    description += '• What are you working on today?\n';
+    description += '• Any blockers?\n\n';
+  } else if (lower.includes('retrospective') || lower.includes('retro')) {
+    description += '**Agenda:**\n';
+    description += '• What went well?\n';
+    description += '• What could be improved?\n';
+    description += '• Action items\n\n';
+  } else if (lower.includes('1:1') || lower.includes('one-on-one')) {
+    description += '**Agenda:**\n';
+    description += '• Recent work and progress\n';
+    description += '• Challenges and support needed\n';
+    description += '• Goals and development\n\n';
+  }
+
+  // Add footer
+  description += '---\n';
+  description += '📅 Scheduled via Hushh AI\n';
+  description += `🤖 Original request: "${message}"`;
+
+  return description;
 }
 
 /**
@@ -227,16 +388,9 @@ export async function createCalendarEvent(params: CalendarEventParams): Promise<
     // Parse the message
     const { startDateTime, endDateTime } = parseDateTime(params.message);
     const attendees = extractEmails(params.message);
-    
-    // Generate title from message or use provided
-    let summary = params.title || `Meeting`;
-    if (!params.title) {
-      // Try to extract a meaningful title
-      if (attendees.length > 0) {
-        const attendeeNames = attendees.map(e => e.split('@')[0]).join(', ');
-        summary = `Meeting with ${attendeeNames}`;
-      }
-    }
+
+    // Generate intelligent title from message context
+    const summary = params.title || generateMeetingTitle(params.message, attendees);
 
     console.log(`Creating calendar event: ${summary}`);
     console.log(`Start: ${startDateTime}, End: ${endDateTime}`);
@@ -253,7 +407,7 @@ export async function createCalendarEvent(params: CalendarEventParams): Promise<
     // Create the event with Google Meet
     const event = {
       summary,
-      description: `Scheduled via Hushh AI\n\nOriginal request: "${params.message}"`,
+      description: generateMeetingDescription(params.message, attendees, summary),
       start: {
         dateTime: startDateTime,
         timeZone: 'Asia/Kolkata',

@@ -63,6 +63,7 @@ export default function HushhAIPage() {
   // State - Smart loading: only show on first visit, not cached auth
   const [isAuthenticated, setIsAuthenticated] = useState(getIsCachedAuth());
   const [isLoading, setIsLoading] = useState(!getIsCachedAuth() && isFirstVisit());
+  const [isDataLoading, setIsDataLoading] = useState(true); // Track background data loading for shimmer
   const [userId, setUserId] = useState<string | null>(null);
   const [chats, setChats] = useState<HushhChat[]>([]);
   const [currentChat, setCurrentChat] = useState<HushhChat | null>(null);
@@ -178,37 +179,44 @@ export default function HushhAIPage() {
   // ============================================
 
   const loadInitialData = async () => {
-    const user = await service.getOrCreateUser();
-    if (user) {
-      setUserId(user.id);
-      // Track product usage for analytics
-      trackProductUsage(PRODUCTS.HUSHH_AI).catch(console.error);
-    }
-
-    // Load critical data first (parallel)
-    const [chatList, limits] = await Promise.all([
-      service.getChats(),
-      service.getMediaLimits(),
-    ]);
-    setChats(chatList);
-    setMediaLimits(limits);
-
-    // Restore last active chat from localStorage (Bug #2 fix)
-    const persistedChatId = getPersistedChatId();
-    if (persistedChatId && chatList.length > 0) {
-      // Check if the persisted chat still exists
-      const chatExists = chatList.find(c => c.id === persistedChatId);
-      if (chatExists) {
-        // Load the persisted chat
-        await loadChat(persistedChatId);
-      } else {
-        // Chat was deleted, clear persisted ID
-        setPersistedChatId(null);
+    setIsDataLoading(true);
+    
+    try {
+      // Load ALL critical data in parallel for maximum speed
+      const [user, chatList, limits] = await Promise.all([
+        service.getOrCreateUser(),
+        service.getChats(),
+        service.getMediaLimits(),
+      ]);
+      
+      if (user) {
+        setUserId(user.id);
+        // Track product usage for analytics (non-blocking)
+        trackProductUsage(PRODUCTS.HUSHH_AI).catch(console.error);
       }
-    }
 
-    // Load profile separately with retry
-    loadUserProfile();
+      setChats(chatList);
+      setMediaLimits(limits);
+
+      // Restore last active chat from localStorage (Bug #2 fix)
+      const persistedChatId = getPersistedChatId();
+      if (persistedChatId && chatList.length > 0) {
+        // Check if the persisted chat still exists
+        const chatExists = chatList.find(c => c.id === persistedChatId);
+        if (chatExists) {
+          // Load the persisted chat
+          await loadChat(persistedChatId);
+        } else {
+          // Chat was deleted, clear persisted ID
+          setPersistedChatId(null);
+        }
+      }
+
+      // Load profile separately with retry (non-blocking)
+      loadUserProfile();
+    } finally {
+      setIsDataLoading(false);
+    }
   };
 
   const loadUserProfile = async (retries = 3) => {
@@ -637,39 +645,62 @@ export default function HushhAIPage() {
                   '&::-webkit-scrollbar-thumb': { background: THEME.colors.border, borderRadius: '2px' },
                 }}
               >
-                {chats.map((chat) => (
-                  <HStack
-                    key={chat.id}
-                    p={3}
-                    borderRadius={THEME.borderRadius.sm}
-                    bg={currentChat?.id === chat.id ? THEME.colors.sidebarActive : 'transparent'}
-                    _hover={{ bg: THEME.colors.sidebarHover }}
-                    cursor="pointer"
-                    onClick={() => handleSelectChat(chat)}
-                    justify="space-between"
-                  >
-                    <Text 
-                      fontSize={THEME.fontSizes.sm} 
-                      noOfLines={1}
-                      color={THEME.colors.textPrimary}
-                    >
-                      {chat.title}
+                {/* Shimmer loading state for chat list */}
+                {isDataLoading && chats.length === 0 ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <HStack key={`skeleton-${i}`} p={3} spacing={2}>
+                      <Skeleton height="18px" flex={1} borderRadius={THEME.borderRadius.sm} startColor={THEME.colors.border} endColor={THEME.colors.backgroundSecondary} />
+                    </HStack>
+                  ))
+                ) : chats.length === 0 ? (
+                  <VStack py={8} spacing={2}>
+                    <Text fontSize={THEME.fontSizes.sm} color={THEME.colors.textSecondary}>
+                      No chats yet
                     </Text>
-                    <IconButton
-                      aria-label="Delete chat"
-                      icon={<TrashIcon />}
-                      variant="ghost"
-                      size="xs"
-                      opacity={0.5}
-                      _hover={{ opacity: 1 }}
-                      onClick={(e) => handleDeleteChat(chat.id, e)}
-                    />
-                  </HStack>
-                ))}
+                    <Text fontSize={THEME.fontSizes.xs} color={THEME.colors.textPlaceholder}>
+                      Start a new conversation
+                    </Text>
+                  </VStack>
+                ) : (
+                  chats.map((chat) => (
+                    <HStack
+                      key={chat.id}
+                      p={3}
+                      borderRadius={THEME.borderRadius.sm}
+                      bg={currentChat?.id === chat.id ? THEME.colors.sidebarActive : 'transparent'}
+                      _hover={{ bg: THEME.colors.sidebarHover }}
+                      cursor="pointer"
+                      onClick={() => handleSelectChat(chat)}
+                      justify="space-between"
+                    >
+                      <Text 
+                        fontSize={THEME.fontSizes.sm} 
+                        noOfLines={1}
+                        color={THEME.colors.textPrimary}
+                      >
+                        {chat.title}
+                      </Text>
+                      <IconButton
+                        aria-label="Delete chat"
+                        icon={<TrashIcon />}
+                        variant="ghost"
+                        size="xs"
+                        opacity={0.5}
+                        _hover={{ opacity: 1 }}
+                        onClick={(e) => handleDeleteChat(chat.id, e)}
+                      />
+                    </HStack>
+                  ))
+                )}
               </VStack>
 
               {/* Media Limit Indicator */}
-              {mediaLimits && (
+              {isDataLoading && !mediaLimits ? (
+                <Box p={3} bg={THEME.colors.backgroundSecondary} borderRadius={THEME.borderRadius.sm}>
+                  <Skeleton height="12px" width="70%" mb={2} borderRadius="sm" startColor={THEME.colors.border} endColor={THEME.colors.backgroundSecondary} />
+                  <Skeleton height="4px" borderRadius="full" startColor={THEME.colors.border} endColor={THEME.colors.backgroundSecondary} />
+                </Box>
+              ) : mediaLimits && (
                 <Box p={3} bg={THEME.colors.backgroundSecondary} borderRadius={THEME.borderRadius.sm}>
                   <Text fontSize={THEME.fontSizes.xs} color={THEME.colors.textSecondary}>
                     Media uploads today: {mediaLimits.dailyUploads}/{mediaLimits.maxDailyUploads}

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast, useClipboard } from "@chakra-ui/react";
 import { useFooterVisibility } from "../../utils/useFooterVisibility";
-import { ArrowLeft, User, TrendingUp, Shield, ChevronDown, Calendar, Brain, Target, Clock, Gauge, Droplets, Briefcase, Layers, Zap, Activity, ChevronUp, Edit2, Share2, Link, Copy, Check, ExternalLink } from "lucide-react";
+import { ArrowLeft, User, TrendingUp, Shield, ChevronDown, Calendar, Brain, Target, Clock, Gauge, Droplets, Briefcase, Layers, Zap, Activity, ChevronUp, Edit2, Share2, Link, Copy, Check, ExternalLink, Home } from "lucide-react";
 import { FaApple, FaWhatsapp, FaLinkedin } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 import { SiGooglepay } from "react-icons/si";
@@ -1198,7 +1198,7 @@ const HushhUserProfilePage: React.FC = () => {
                     : "Generate Investor Profile"
               }
             </button>
-            <p className="text-xs text-[#6B7280] text-center mt-4 leading-normal px-2">
+            <p className="text-xs text-[#6B7280] text-center mt-3 leading-normal px-2">
               {investorProfile 
                 ? "Update your AI-generated investor profile."
                 : hasOnboardingData
@@ -1206,6 +1206,15 @@ const HushhUserProfilePage: React.FC = () => {
                   : "These details personalise your investor profile."
               }
             </p>
+            
+            {/* Go to Home Button */}
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center gap-2 w-full mt-3 py-2.5 text-[#2B8CEE] hover:bg-blue-50 rounded-xl transition-colors font-medium text-sm"
+            >
+              <Home className="w-4 h-4" />
+              Go to Home
+            </button>
           </div>
         )}
       </div>

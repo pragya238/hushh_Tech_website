@@ -80,6 +80,7 @@ import MobileBottomNav from './components/MobileBottomNav';
 import HushhAIPage from './hushh-ai/pages';
 import { LoginPage as HushhAILoginPage, SignupPage as HushhAISignupPage } from './hushh-ai/presentation/pages';
 import HushhAgentApp from './hushh-agent/pages';
+import KaiApp from './kai/pages';
 
 // Google Analytics configuration
 const GA_TRACKING_ID = 'G-R58S9WWPM0';
@@ -96,9 +97,10 @@ const ContentWrapper = ({ children }: { children: ReactNode }) => {
   const isInvestorGuide = location.pathname === '/investor-guide';
   const isHushhAI = location.pathname.startsWith('/hushh-ai');
   const isHushhAgent = location.pathname.startsWith('/hushh-agent');
+  const isKai = location.pathname.startsWith('/kai');
 
   return (
-    <div className={`${isHomePage || isAuthCallback || isUserRegistration || isOnboarding || isKycFlow || isA2APlayground || isInvestorGuide || isHushhAI || isHushhAgent ? '' : 'mt-20'}`}>
+    <div className={`${isHomePage || isAuthCallback || isUserRegistration || isOnboarding || isKycFlow || isA2APlayground || isInvestorGuide || isHushhAI || isHushhAgent || isKai ? '' : 'mt-20'}`}>
       {children}
     </div>
   );
@@ -109,11 +111,12 @@ const useLayoutVisibility = () => {
   const location = useLocation();
   const isHushhAI = location.pathname.startsWith('/hushh-ai');
   const isHushhAgent = location.pathname.startsWith('/hushh-agent');
+  const isKai = location.pathname.startsWith('/kai');
   
   return {
-    showNavbar: !isHushhAI && !isHushhAgent,
-    showFooter: !isHushhAI && !isHushhAgent,
-    showMobileNav: !isHushhAI && !isHushhAgent,
+    showNavbar: !isHushhAI && !isHushhAgent && !isKai,
+    showFooter: !isHushhAI && !isHushhAgent && !isKai,
+    showMobileNav: !isHushhAI && !isHushhAgent && !isKai,
   };
 };
 
@@ -436,6 +439,9 @@ function App() {
             {/* Hushh Agent - AI Voice/Video Coaching Platform */}
             {/* Uses wildcard to enable nested routing within hushh-agent module */}
             <Route path='/hushh-agent/*' element={<HushhAgentApp />} />
+            {/* Kai - Financial Intelligence Agent */}
+            {/* Real-time AI voice/video financial advisor powered by Gemini 2.0 Flash */}
+            <Route path='/kai' element={<KaiApp />} />
           </Routes>
         </ContentWrapper>
         {/* Footer - Only show for non-Hushh AI routes */}

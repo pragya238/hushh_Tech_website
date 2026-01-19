@@ -81,6 +81,7 @@ import HushhAIPage from './hushh-ai/pages';
 import { LoginPage as HushhAILoginPage, SignupPage as HushhAISignupPage } from './hushh-ai/presentation/pages';
 import HushhAgentApp from './hushh-agent/pages';
 import KaiApp from './kai/pages';
+import HushhStudioApp from './hushh-studio/pages';
 
 // Google Analytics configuration
 const GA_TRACKING_ID = 'G-R58S9WWPM0';
@@ -98,9 +99,10 @@ const ContentWrapper = ({ children }: { children: ReactNode }) => {
   const isHushhAI = location.pathname.startsWith('/hushh-ai');
   const isHushhAgent = location.pathname.startsWith('/hushh-agent');
   const isKai = location.pathname.startsWith('/kai');
+  const isStudio = location.pathname.startsWith('/studio');
 
   return (
-    <div className={`${isHomePage || isAuthCallback || isUserRegistration || isOnboarding || isKycFlow || isA2APlayground || isInvestorGuide || isHushhAI || isHushhAgent || isKai ? '' : 'mt-20'}`}>
+    <div className={`${isHomePage || isAuthCallback || isUserRegistration || isOnboarding || isKycFlow || isA2APlayground || isInvestorGuide || isHushhAI || isHushhAgent || isKai || isStudio ? '' : 'mt-20'}`}>
       {children}
     </div>
   );
@@ -112,11 +114,12 @@ const useLayoutVisibility = () => {
   const isHushhAI = location.pathname.startsWith('/hushh-ai');
   const isHushhAgent = location.pathname.startsWith('/hushh-agent');
   const isKai = location.pathname.startsWith('/kai');
+  const isStudio = location.pathname.startsWith('/studio');
   
   return {
-    showNavbar: !isHushhAI && !isHushhAgent && !isKai,
-    showFooter: !isHushhAI && !isHushhAgent && !isKai,
-    showMobileNav: !isHushhAI && !isHushhAgent && !isKai,
+    showNavbar: !isHushhAI && !isHushhAgent && !isKai && !isStudio,
+    showFooter: !isHushhAI && !isHushhAgent && !isKai && !isStudio,
+    showMobileNav: !isHushhAI && !isHushhAgent && !isKai && !isStudio,
   };
 };
 
@@ -442,6 +445,9 @@ function App() {
             {/* Kai - Financial Intelligence Agent */}
             {/* Real-time AI voice/video financial advisor powered by Gemini 2.0 Flash */}
             <Route path='/kai' element={<KaiApp />} />
+            {/* Hushh Studio - FREE AI Video Generation */}
+            {/* Powered by Google Veo 3.1 - No login required, free for Indian audience */}
+            <Route path='/studio' element={<HushhStudioApp />} />
           </Routes>
         </ContentWrapper>
         {/* Footer - Only show for non-Hushh AI routes */}

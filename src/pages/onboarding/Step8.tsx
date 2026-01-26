@@ -100,22 +100,31 @@ export default function OnboardingStep8() {
         .eq('user_id', user.id)
         .single();
 
+      // Load phone number if exists
       if (onboardingData?.phone_number) {
         setPhoneNumber(onboardingData.phone_number);
+        // Only use saved country code if user has already entered a phone number
+        if (onboardingData?.phone_country_code) {
+          setCountryCode(onboardingData.phone_country_code);
+          console.log('[Step8] Using saved phone country code:', onboardingData.phone_country_code);
+          return; // User has saved data, use it
+        }
       }
       
-      // Priority: 1) User-saved phone_country_code, 2) GPS-detected dial code, 3) Default +1
-      if (onboardingData?.phone_country_code) {
-        setCountryCode(onboardingData.phone_country_code);
-      } else if (onboardingData?.gps_detected_phone_dial_code) {
-        // Use GPS-detected dial code if user hasn't set one yet
+      // For new users or users who haven't entered a phone yet:
+      // Use GPS-detected dial code as the intelligent default
+      if (onboardingData?.gps_detected_phone_dial_code) {
         const gpsDialCode = onboardingData.gps_detected_phone_dial_code;
         // Verify the dial code exists in our list
         const dialCodeExists = countryCodes.some(c => c.code === gpsDialCode);
         if (dialCodeExists) {
           setCountryCode(gpsDialCode);
           console.log('[Step8] Using GPS-detected dial code:', gpsDialCode);
+        } else {
+          console.log('[Step8] GPS dial code not in list:', gpsDialCode);
         }
+      } else {
+        console.log('[Step8] No GPS dial code found, using default +1');
       }
     };
 

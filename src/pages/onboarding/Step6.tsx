@@ -112,6 +112,9 @@ const countryCodeToName: Record<string, string> = {
 // Edge Function URL for GPS geocoding
 const LOCATION_GEOCODE_API = 'https://ibsisfnjxeowvdtvgzff.supabase.co/functions/v1/hushh-location-geocode';
 
+// Supabase anon key for Edge Function calls
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2lzZm5qeGVvd3ZkdHZnemZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTk1NzgsImV4cCI6MjA4MDEzNTU3OH0.M01E3lEhXLFnRu4M0qmvDJpbqNMEQEkzC9CJG8xNNZA';
+
 // Location data type from GPS API
 interface LocationData {
   country: string;
@@ -225,11 +228,13 @@ export default function OnboardingStep6() {
       // Create abort controller
       locationAbortController.current = new AbortController();
 
-      // Call geocoding API
+      // Call geocoding API with Supabase anon key for authentication
       const response = await fetch(LOCATION_GEOCODE_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ latitude, longitude }),
         signal: locationAbortController.current.signal,

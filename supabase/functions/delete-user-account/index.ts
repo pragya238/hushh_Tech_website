@@ -40,8 +40,23 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser()
     
     if (userError || !user) {
+      console.error('User validation failed:', userError?.message, userError?.status)
+      
+      // Provide more detailed error message
+      let errorMessage = 'Invalid or expired token'
+      if (userError?.message) {
+        errorMessage = userError.message
+      }
+      if (userError?.status === 401 || userError?.message?.includes('expired')) {
+        errorMessage = 'Your session has expired. Please log out, log back in, and try again.'
+      }
+      
       return new Response(
-        JSON.stringify({ error: 'Invalid or expired token' }),
+        JSON.stringify({ 
+          error: errorMessage,
+          details: userError?.message || 'Token validation failed',
+          code: userError?.status || 401
+        }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

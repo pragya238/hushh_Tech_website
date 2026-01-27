@@ -35,7 +35,7 @@ const DeleteAccountModal = ({
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isDeleteEnabled = confirmText === "DELETE";
+  const isDeleteEnabled = confirmText.toUpperCase() === "DELETE";
 
   const handleDeleteAccount = async () => {
     if (!isDeleteEnabled || !config.supabaseClient) return;
@@ -43,32 +43,45 @@ const DeleteAccountModal = ({
     setIsDeleting(true);
 
     try {
-      // First, validate and refresh the session if needed
-      // getUser() validates the token and triggers an automatic refresh if expired
-      const { data: { user }, error: userError } = await config.supabaseClient.auth.getUser();
+      console.log("[DeleteAccount] Starting account deletion process...");
       
-      if (userError || !user) {
-        console.error("Session validation failed:", userError);
-        throw new Error("Session expired. Please log in again.");
-      }
+      // Force refresh the session to get a fresh access token
+      // This is more reliable than getUser() + getSession() which can return stale tokens
+      const { data: refreshData, error: refreshError } = 
+        await config.supabaseClient.auth.refreshSession();
+      
+      let accessToken: string | null = null;
 
-      // Now get the refreshed session token
-      const {
-        data: { session },
-      } = await config.supabaseClient.auth.getSession();
-
-      if (!session?.access_token) {
-        throw new Error("No active session");
+      if (refreshError) {
+        console.error("[DeleteAccount] Session refresh failed:", refreshError);
+        // If refresh fails, try to get current session as fallback
+        const { data: { session: fallbackSession } } = 
+          await config.supabaseClient.auth.getSession();
+        
+        if (!fallbackSession?.access_token) {
+          throw new Error("Session expired. Please log out and log in again to delete your account.");
+        }
+        
+        // Use fallback session
+        console.log("[DeleteAccount] Using fallback session...");
+        accessToken = fallbackSession.access_token;
+      } else if (refreshData.session?.access_token) {
+        console.log("[DeleteAccount] Session refreshed successfully");
+        accessToken = refreshData.session.access_token;
+      } else {
+        console.error("[DeleteAccount] No session after refresh");
+        throw new Error("Unable to verify your session. Please log out and log in again.");
       }
 
       // Call the edge function to delete account
+      console.log("[DeleteAccount] Calling delete endpoint...");
       const supabaseUrl = config.SUPABASE_URL;
       const response = await fetch(
         `${supabaseUrl}/functions/v1/delete-user-account`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
         }
@@ -77,8 +90,11 @@ const DeleteAccountModal = ({
       const data = await response.json();
 
       if (!response.ok) {
+        console.error("[DeleteAccount] Edge function error:", data);
         throw new Error(data.error || "Failed to delete account");
       }
+
+      console.log("[DeleteAccount] Account deleted successfully");
 
       // Clear local storage
       localStorage.clear();
@@ -94,7 +110,7 @@ const DeleteAccountModal = ({
       // Notify parent component
       onAccountDeleted();
     } catch (error: any) {
-      console.error("Error deleting account:", error);
+      console.error("[DeleteAccount] Error:", error);
       toast({
         title: t("deleteAccount.errorTitle"),
         description: error.message || t("deleteAccount.errorMessage"),
@@ -191,7 +207,7 @@ const DeleteAccountModal = ({
                 border="2px solid #E5E7EB"
                 borderRadius="12px"
                 _focus={{
-                  borderColor: confirmText === "DELETE" ? "#DC2626" : "#6B7280",
+                  borderColor: confirmText.toUpperCase() === "DELETE" ? "#DC2626" : "#6B7280",
                   boxShadow: "none",
                 }}
                 _placeholder={{ color: "#9CA3AF" }}
@@ -205,7 +221,7 @@ const DeleteAccountModal = ({
 
         <ModalFooter px={6} pb={6} pt={0}>
           <HStack spacing={3} w="full">
-            {/* Cancel button - 30% grey */}
+            {/* Cancel button */}
             <Button
               flex={1}
               onClick={handleClose}
@@ -223,7 +239,7 @@ const DeleteAccountModal = ({
               {t("deleteAccount.cancel")}
             </Button>
 
-            {/* Delete button - 10% red accent */}
+            {/* Delete button */}
             <Button
               flex={1}
               onClick={handleDeleteAccount}

@@ -1,7 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import config from '../../resources/config/config';
 import { useFooterVisibility } from '../../utils/useFooterVisibility';
+
+// Types for calendar booking
+interface TimeSlot {
+  startTime: string;
+  endTime: string;
+  available: boolean;
+}
+
+interface DayAvailability {
+  date: string;
+  slots: TimeSlot[];
+}
+
+interface CalendarData {
+  ceo: { name: string; email: string };
+  timezone: string;
+  meetingDuration: number;
+  availability: DayAvailability[];
+}
 
 type PaymentState = 'loading' | 'not_paid' | 'verifying' | 'paid' | 'booked';
 
@@ -105,6 +124,14 @@ function MeetCeoPage() {
   const [error, setError] = useState<string | null>(null);
   const [hushhCoins, setHushhCoins] = useState(0);
   const isFooterVisible = useFooterVisibility();
+  
+  // Calendar booking state
+  const [calendarData, setCalendarData] = useState<CalendarData | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [bookingInProgress, setBookingInProgress] = useState(false);
+  const [meetLink, setMeetLink] = useState<string | null>(null);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -244,6 +271,80 @@ function MeetCeoPage() {
       setLoading(false);
     }
   };
+
+  // Fetch calendar availability when paid
+  const fetchCalendarSlots = async () => {
+    setLoadingSlots(true);
+    try {
+      const response = await fetch(
+        `${config.SUPABASE_URL}/functions/v1/ceo-calendar-booking?days=14`,
+        { method: 'GET' }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setCalendarData(data);
+        // Auto-select first available date
+        if (data.availability?.length > 0) {
+          setSelectedDate(data.availability[0].date);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching calendar slots:', err);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  // Book meeting with Google Calendar
+  const handleBookMeeting = async () => {
+    if (!selectedSlot) return;
+    setBookingInProgress(true);
+    setError(null);
+
+    try {
+      const { data: { session } } = await config.supabaseClient!.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const { data: { user } } = await config.supabaseClient!.auth.getUser();
+      const userName = user?.user_metadata?.full_name || 'Hushh User';
+
+      const response = await fetch(
+        `${config.SUPABASE_URL}/functions/v1/ceo-calendar-booking`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            startTime: selectedSlot.startTime,
+            endTime: selectedSlot.endTime,
+            attendeeName: userName,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        setMeetLink(result.meetLink);
+        setPaymentState('booked');
+      } else {
+        throw new Error(result.error || 'Booking failed');
+      }
+    } catch (err: any) {
+      console.error('Booking error:', err);
+      setError(err.message || 'Failed to book meeting');
+    } finally {
+      setBookingInProgress(false);
+    }
+  };
+
+  // Trigger fetch when paid
+  useEffect(() => {
+    if (paymentState === 'paid') {
+      fetchCalendarSlots();
+    }
+  }, [paymentState]);
 
   const handleCalendlyBooked = async () => {
     // Mark as booked in database
@@ -388,7 +489,7 @@ function MeetCeoPage() {
             </>
           )}
 
-          {/* Paid State - Show Calendly */}
+          {/* Paid State - Show Google Calendar Booking */}
           {paymentState === 'paid' && (
             <>
               {/* Success Message */}
@@ -404,29 +505,145 @@ function MeetCeoPage() {
                 </p>
               </div>
 
-              {/* Calendly Instructions */}
+              {/* Calendar Booking Header */}
               <div className="bg-white border border-slate-200 rounded-xl p-5 mb-4 text-center shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
                 <h2 className="text-slate-900 text-base font-bold mb-2">
                   Book Your 1-Hour Deep Dive
                 </h2>
                 <p className="text-slate-500 text-sm">
-                  Schedule office hours with Manish Sainani
+                  Schedule office hours with {calendarData?.ceo.name || 'Manish Sainani'}
                 </p>
+                {calendarData?.timezone && (
+                  <p className="text-slate-400 text-xs mt-1">
+                    Times shown in {calendarData.timezone}
+                  </p>
+                )}
               </div>
 
-              {/* Calendly Embed */}
-              <div 
-                className="rounded-xl overflow-hidden mb-6 border border-slate-200" 
-                style={{ height: '500px' }}
-              >
-                <iframe
-                  src="https://calendly.com/hushh/ceo-office-hours"
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  title="Schedule office hours with Manish Sainani"
-                ></iframe>
-              </div>
+              {/* Loading State */}
+              {loadingSlots && (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="relative w-12 h-12 mb-4">
+                    <div className="absolute inset-0 rounded-full border-4 border-slate-200" />
+                    <div className="absolute inset-0 rounded-full border-4 border-t-[#2b8cee] animate-spin" />
+                  </div>
+                  <p className="text-slate-500 text-sm">Loading available times...</p>
+                </div>
+              )}
+
+              {/* Calendar Booking UI */}
+              {!loadingSlots && calendarData && (
+                <div className="space-y-4 mb-6">
+                  {/* Date Selection */}
+                  <div className="overflow-x-auto pb-2 -mx-2 px-2">
+                    <div className="flex gap-2">
+                      {calendarData.availability.map((day) => {
+                        const date = new Date(day.date);
+                        const isSelected = selectedDate === day.date;
+                        const hasSlots = day.slots.some(s => s.available);
+                        return (
+                          <button
+                            key={day.date}
+                            onClick={() => {
+                              setSelectedDate(day.date);
+                              setSelectedSlot(null);
+                            }}
+                            disabled={!hasSlots}
+                            className={`flex-shrink-0 flex flex-col items-center p-3 rounded-xl border-2 min-w-[70px] transition-all ${
+                              isSelected
+                                ? 'border-[#2b8cee] bg-[#2b8cee]/5'
+                                : hasSlots
+                                ? 'border-slate-200 hover:border-slate-300'
+                                : 'border-slate-100 bg-slate-50 opacity-50'
+                            }`}
+                          >
+                            <span className="text-[10px] font-medium text-slate-400 uppercase">
+                              {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                            </span>
+                            <span className={`text-lg font-bold ${isSelected ? 'text-[#2b8cee]' : 'text-slate-900'}`}>
+                              {date.getDate()}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {date.toLocaleDateString('en-US', { month: 'short' })}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Time Slots */}
+                  {selectedDate && (
+                    <div className="bg-white border border-slate-200 rounded-xl p-4">
+                      <h3 className="text-sm font-bold text-slate-900 mb-3">
+                        Available Times
+                      </h3>
+                      <div className="grid grid-cols-3 gap-2">
+                        {calendarData.availability
+                          .find(d => d.date === selectedDate)
+                          ?.slots.filter(slot => slot.available)
+                          .map((slot) => {
+                            const time = new Date(slot.startTime);
+                            const isSelected = selectedSlot?.startTime === slot.startTime;
+                            return (
+                              <button
+                                key={slot.startTime}
+                                onClick={() => setSelectedSlot(slot)}
+                                className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                                  isSelected
+                                    ? 'bg-[#2b8cee] text-white'
+                                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                                }`}
+                              >
+                                {time.toLocaleTimeString('en-US', {
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  hour12: true,
+                                })}
+                              </button>
+                            );
+                          })}
+                      </div>
+                      {calendarData.availability
+                        .find(d => d.date === selectedDate)
+                        ?.slots.filter(slot => slot.available).length === 0 && (
+                        <p className="text-slate-400 text-sm text-center py-4">
+                          No available slots on this day
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Selected Slot Summary */}
+                  {selectedSlot && (
+                    <div className="bg-[#2b8cee]/5 border border-[#2b8cee]/20 rounded-xl p-4">
+                      <div className="flex items-center gap-3">
+                        <CalendarIcon className="text-[#2b8cee]" />
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">
+                            {new Date(selectedSlot.startTime).toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </p>
+                          <p className="text-sm text-slate-600">
+                            {new Date(selectedSlot.startTime).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true,
+                            })} - {new Date(selectedSlot.endTime).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true,
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
 
@@ -500,14 +717,28 @@ function MeetCeoPage() {
             {paymentState === 'paid' && (
               <div className="flex flex-col gap-3">
                 <button
-                  onClick={handleCalendlyBooked}
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-[#2b8cee] py-4 text-white text-base font-bold transition-all hover:bg-blue-600 active:scale-[0.98]"
+                  onClick={handleBookMeeting}
+                  disabled={!selectedSlot || bookingInProgress}
+                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-[#2b8cee] py-4 text-white text-base font-bold transition-all hover:bg-blue-600 active:scale-[0.98] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
-                  I've Booked My Meeting
+                  {bookingInProgress ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Booking...
+                    </span>
+                  ) : selectedSlot ? (
+                    'Confirm Booking'
+                  ) : (
+                    'Select a Time Slot'
+                  )}
                 </button>
 
                 <button
                   onClick={handleContinueToProfile}
+                  disabled={bookingInProgress}
                   className="flex w-full cursor-pointer items-center justify-center rounded-full bg-transparent py-2 text-slate-500 text-sm font-bold hover:text-slate-800 transition-colors"
                 >
                   Skip — I'll book later

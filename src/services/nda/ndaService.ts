@@ -5,6 +5,9 @@
 
 import config from '../../resources/config/config';
 
+// Supabase function URL for NDA notification
+const NDA_NOTIFICATION_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nda-signed-notification`;
+
 export interface NDAStatus {
   hasSignedNda: boolean;
   signedAt: string | null;
@@ -159,6 +162,83 @@ export const generateNDAPdf = async (
 };
 
 /**
+ * Send NDA signed notification to manish@hushh.ai and ankit@hushh.ai
+ */
+export const sendNDANotification = async (
+  signerName: string,
+  signerEmail: string,
+  signedAt: string,
+  ndaVersion: string,
+  pdfUrl?: string,
+  pdfBlob?: Blob,
+  userId?: string,
+  signerIp?: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Prepare payload
+    const payload: Record<string, unknown> = {
+      signerName,
+      signerEmail,
+      signedAt,
+      ndaVersion,
+      signerIp: signerIp || 'Unknown',
+      userId,
+    };
+
+    // Include PDF URL if available
+    if (pdfUrl) {
+      payload.pdfUrl = pdfUrl;
+    }
+
+    // Convert PDF blob to base64 if provided for attachment
+    if (pdfBlob) {
+      try {
+        const arrayBuffer = await pdfBlob.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(arrayBuffer).reduce(
+            (data, byte) => data + String.fromCharCode(byte),
+            ''
+          )
+        );
+        payload.pdfBase64 = base64;
+      } catch (blobErr) {
+        console.warn('Could not convert PDF blob to base64:', blobErr);
+      }
+    }
+
+    // Call the Supabase Edge Function
+    const response = await fetch(NDA_NOTIFICATION_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('NDA notification failed:', errorText);
+      return {
+        success: false,
+        error: `Failed to send notification: ${errorText}`,
+      };
+    }
+
+    const result = await response.json();
+    console.log('NDA notification sent successfully:', result);
+
+    return { success: true };
+  } catch (err) {
+    console.error('Error sending NDA notification:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    };
+  }
+};
+
+/**
  * Upload signed NDA PDF to Supabase Storage
  */
 export const uploadSignedNDA = async (
@@ -214,5 +294,6 @@ export default {
   checkNDAStatus,
   signNDA,
   generateNDAPdf,
+  sendNDANotification,
   uploadSignedNDA,
 };

@@ -284,9 +284,18 @@ const KycFinancialLinkScreen: React.FC<KycFinancialLinkScreenProps> = ({
   const balanceDisplay = useMemo(() => {
     const data = plaid.financialData?.balance?.data;
     if (!data) return { mainValue: undefined, subtitle: undefined };
+
+    // Raw Plaid response has `accounts[]` array — compute totals from it
+    const accounts = data.accounts || [];
+    const accountCount = accounts.length;
+    const totalBalance = accounts.reduce(
+      (sum: number, acc: any) => sum + (acc.balances?.current || 0), 0
+    );
+    const currency = accounts[0]?.balances?.iso_currency_code || 'USD';
+
     return {
-      mainValue: formatCurrency(data.total_balance, data.currency),
-      subtitle: `${data.account_count} account${data.account_count !== 1 ? 's' : ''} linked`,
+      mainValue: formatCurrency(totalBalance, currency),
+      subtitle: `${accountCount} account${accountCount !== 1 ? 's' : ''} linked`,
     };
   }, [plaid.financialData]);
 
@@ -306,9 +315,18 @@ const KycFinancialLinkScreen: React.FC<KycFinancialLinkScreenProps> = ({
   const investmentsDisplay = useMemo(() => {
     const data = plaid.financialData?.investments?.data;
     if (!data) return { mainValue: undefined, subtitle: undefined };
+
+    // Raw Plaid response has `holdings[]` and `securities[]` arrays
+    const holdings = data.holdings || [];
+    const holdingsCount = holdings.length;
+    const totalValue = holdings.reduce(
+      (sum: number, h: any) => sum + (h.institution_value || 0), 0
+    );
+    const currency = holdings[0]?.iso_currency_code || 'USD';
+
     return {
-      mainValue: formatCurrency(data.total_value, data.currency),
-      subtitle: `${data.holdings_count} holding${data.holdings_count !== 1 ? 's' : ''} found`,
+      mainValue: formatCurrency(totalValue, currency),
+      subtitle: `${holdingsCount} holding${holdingsCount !== 1 ? 's' : ''} found`,
     };
   }, [plaid.financialData]);
 

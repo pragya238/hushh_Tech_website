@@ -232,16 +232,23 @@ export const fetchInvestments = async (
     });
 
     if (!response.ok) {
+      // Handle 404 (function not deployed) gracefully
+      if (response.status === 404) {
+        console.warn('[Plaid] investments-holdings function not found (404). May need deployment.');
+        return { available: false, data: null, error: 'Investment service temporarily unavailable', reason: 'error' };
+      }
+
       const err = await response.json().catch(() => ({}));
       if (err.error_code === 'PRODUCTS_NOT_SUPPORTED' || response.status === 400) {
         return { available: false, data: null, error: null, reason: 'not_supported' };
       }
-      return { available: false, data: null, error: err.error || 'Failed to fetch investments', reason: 'error' };
+      return { available: false, data: null, error: err.error || err.error_message || 'Failed to fetch investments', reason: 'error' };
     }
 
     const data = await response.json();
     return { available: true, data, error: null, reason: null };
   } catch (err: any) {
+    console.error('[Plaid] fetchInvestments error:', err.message);
     return { available: false, data: null, error: err.message, reason: 'error' };
   }
 };

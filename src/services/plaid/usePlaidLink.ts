@@ -109,7 +109,8 @@ export const usePlaidLinkHook = (userId: string, userEmail?: string): UsePlaidLi
 
     const params = new URLSearchParams(window.location.search);
     const hasOAuthStateId = !!params.get('oauth_state_id');
-    const hasOAuthPending = sessionStorage.getItem('plaid_oauth_pending') === 'true';
+    const oauthPendingTimestamp = sessionStorage.getItem('plaid_oauth_pending');
+    const hasOAuthPending = !!oauthPendingTimestamp;
 
     if (hasOAuthStateId) {
       // Valid OAuth redirect — oauth_state_id present in URL
@@ -120,11 +121,20 @@ export const usePlaidLinkHook = (userId: string, userEmail?: string): UsePlaidLi
       receivedRedirectUri.current = window.location.href;
       sessionStorage.removeItem('plaid_oauth_pending');
     } else if (hasOAuthPending) {
-      // Stale flag without oauth_state_id — clear everything and start fresh
-      console.log('[Plaid] ⚠️ Stale OAuth pending flag found (no oauth_state_id). Clearing and starting fresh.');
-      sessionStorage.removeItem('plaid_oauth_pending');
-      sessionStorage.removeItem('plaid_link_token');
-      // Do NOT set isOAuthRedirect — let normal flow create a fresh link token
+      // Check if the flag is fresh (set within last 10 seconds) or stale
+      const flagAge = Date.now() - Number(oauthPendingTimestamp);
+      const isFreshFlag = flagAge < 10_000; // Less than 10 seconds old
+
+      if (isFreshFlag) {
+        // OAuth is CURRENTLY opening — do NOT clear the flag or link token!
+        // The browser will navigate away shortly to the bank's OAuth page.
+        console.log('[Plaid] 🔑 OAuth is currently opening (flag age:', Math.round(flagAge / 1000), 's). Keeping flag for redirect.');
+      } else {
+        // Stale flag (>10s old) — user came back without completing OAuth
+        console.log('[Plaid] ⚠️ Stale OAuth pending flag found (', Math.round(flagAge / 1000), 's old, no oauth_state_id). Clearing and starting fresh.');
+        sessionStorage.removeItem('plaid_oauth_pending');
+        sessionStorage.removeItem('plaid_link_token');
+      }
     }
   }, []);
 
@@ -134,6 +144,13 @@ export const usePlaidLinkHook = (userId: string, userEmail?: string): UsePlaidLi
 
   const initializeLinkToken = useCallback(async () => {
     if (!userId) return;
+
+    // If OAuth is currently opening (fresh flag), don't create a new token
+    const pendingTimestamp = sessionStorage.getItem('plaid_oauth_pending');
+    if (pendingTimestamp && (Date.now() - Number(pendingTimestamp)) < 10_000) {
+      console.log('[Plaid] ⏳ OAuth is currently opening. Skipping link token creation.');
+      return;
+    }
 
     // If returning from OAuth redirect, restore the stored link token
     if (isOAuthRedirect.current) {
@@ -370,10 +387,12 @@ export const usePlaidLinkHook = (userId: string, userEmail?: string): UsePlaidLi
   const handlePlaidEvent: PlaidLinkOnEvent = useCallback((eventName, metadata) => {
     console.log(`[Plaid] 📡 Event: ${eventName}`, metadata);
 
-    // When OAuth opens, set a flag so we can detect the redirect back
+    // When OAuth opens, set a flag WITH TIMESTAMP so we can detect the redirect back
+    // The timestamp prevents the stale-flag detection from clearing it during
+    // the same render cycle (before the browser actually navigates away)
     if (eventName === 'OPEN_OAUTH') {
       console.log('[Plaid] 🔑 Setting OAuth pending flag in sessionStorage');
-      sessionStorage.setItem('plaid_oauth_pending', 'true');
+      sessionStorage.setItem('plaid_oauth_pending', Date.now().toString());
     }
   }, []);
 

@@ -213,10 +213,17 @@ const KycFinancialLinkScreen: React.FC<KycFinancialLinkScreenProps> = ({
     const owners = accounts[0]?.owners || [];
     if (owners.length === 0) return null;
     const owner = owners[0];
+    // Deduplicate emails and phones (case-insensitive for emails)
+    const rawEmails = (owner.emails || []).map((e: any) => e.data).filter(Boolean);
+    const uniqueEmails = [...new Set(rawEmails.map((e: string) => e.toLowerCase()))];
+
+    const rawPhones = (owner.phone_numbers || []).map((p: any) => p.data).filter(Boolean);
+    const uniquePhones = [...new Set(rawPhones)];
+
     return {
       names: owner.names || [],
-      emails: (owner.emails || []).map((e: any) => e.data),
-      phones: (owner.phone_numbers || []).map((p: any) => p.data),
+      emails: uniqueEmails,
+      phones: uniquePhones,
       addresses: (owner.addresses || []).map((a: any) => {
         const d = a.data || {};
         return [d.street, d.city, d.region, d.postal_code, d.country].filter(Boolean).join(', ');
@@ -375,25 +382,25 @@ const KycFinancialLinkScreen: React.FC<KycFinancialLinkScreenProps> = ({
             <Box bg={IOS.listBg} borderRadius="12px" overflow="hidden" border="0.5px solid" borderColor="rgba(0,0,0,0.04)">
               {identityInfo.names.length > 0 && (
                 <Flex align="center" px={4} py={3} borderBottom="0.5px solid" borderColor={IOS.separator}>
-                  <Text fontSize="20px" mr={3} className="material-symbols-outlined" color={IOS.primary} sx={{ fontVariationSettings: "'FILL' 0, 'wght' 400" }}>person</Text>
+                  <Text fontSize="20px" mr={3} className="material-symbols-outlined" color={IOS.secondary} sx={{ fontVariationSettings: "'FILL' 1, 'wght' 400" }}>person</Text>
                   <Box flex="1"><Text fontSize="13px" color={IOS.secondary}>Name</Text><Text fontSize="16px" fontWeight="500" color={IOS.text}>{identityInfo.names.join(', ')}</Text></Box>
                 </Flex>
               )}
               {identityInfo.emails.length > 0 && (
                 <Flex align="center" px={4} py={3} borderBottom="0.5px solid" borderColor={IOS.separator}>
-                  <Text fontSize="20px" mr={3} className="material-symbols-outlined" color={IOS.primary} sx={{ fontVariationSettings: "'FILL' 0, 'wght' 400" }}>email</Text>
+                  <Text fontSize="20px" mr={3} className="material-symbols-outlined" color={IOS.secondary} sx={{ fontVariationSettings: "'FILL' 1, 'wght' 400" }}>email</Text>
                   <Box flex="1"><Text fontSize="13px" color={IOS.secondary}>Email</Text><Text fontSize="16px" fontWeight="500" color={IOS.text}>{identityInfo.emails.join(', ')}</Text></Box>
                 </Flex>
               )}
               {identityInfo.phones.length > 0 && (
                 <Flex align="center" px={4} py={3} borderBottom="0.5px solid" borderColor={IOS.separator}>
-                  <Text fontSize="20px" mr={3} className="material-symbols-outlined" color={IOS.primary} sx={{ fontVariationSettings: "'FILL' 0, 'wght' 400" }}>phone</Text>
+                  <Text fontSize="20px" mr={3} className="material-symbols-outlined" color={IOS.secondary} sx={{ fontVariationSettings: "'FILL' 1, 'wght' 400" }}>phone</Text>
                   <Box flex="1"><Text fontSize="13px" color={IOS.secondary}>Phone</Text><Text fontSize="16px" fontWeight="500" color={IOS.text}>{identityInfo.phones.join(', ')}</Text></Box>
                 </Flex>
               )}
               {identityInfo.addresses.length > 0 && (
                 <Flex align="center" px={4} py={3}>
-                  <Text fontSize="20px" mr={3} className="material-symbols-outlined" color={IOS.primary} sx={{ fontVariationSettings: "'FILL' 0, 'wght' 400" }}>location_on</Text>
+                  <Text fontSize="20px" mr={3} className="material-symbols-outlined" color={IOS.secondary} sx={{ fontVariationSettings: "'FILL' 1, 'wght' 400" }}>location_on</Text>
                   <Box flex="1"><Text fontSize="13px" color={IOS.secondary}>Address</Text><Text fontSize="15px" fontWeight="500" color={IOS.text}>{identityInfo.addresses[0]}</Text></Box>
                 </Flex>
               )}

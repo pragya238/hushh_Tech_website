@@ -301,7 +301,7 @@ const KycFinancialLinkScreen: React.FC<KycFinancialLinkScreenProps> = ({
       sx={{ '--onboarding-footer-space': '0px', WebkitFontSmoothing: 'antialiased' }}
     >
       {/* Scrollable content */}
-      <Box as="main" flex="1 1 auto" minH={0} overflowY="auto" overflowX="hidden" pb="200px">
+      <Box as="main" flex="1 1 auto" minH={0} overflowY="auto" overflowX="hidden" pb={6} sx={{ WebkitOverflowScrolling: 'touch' }}>
 
         {/* Header */}
         <Box pt={14} px={5} pb={0} mb={2}>
@@ -427,8 +427,8 @@ const KycFinancialLinkScreen: React.FC<KycFinancialLinkScreenProps> = ({
         )}
       </Box>
 
-      {/* ═══ Fixed bottom bar ═══ */}
-      <Box position="absolute" bottom={0} left={0} right={0} bg="rgba(255,255,255,0.95)" backdropFilter="blur(20px)" sx={{ WebkitBackdropFilter: 'blur(20px)' }} px={5} pt={4} pb={8} zIndex={50}>
+      {/* ═══ Bottom action bar — flex child, not absolute ═══ */}
+      <Box flexShrink={0} bg="rgba(255,255,255,0.95)" backdropFilter="blur(20px)" sx={{ WebkitBackdropFilter: 'blur(20px)' }} px={5} pt={4} pb={8} borderTop="0.5px solid" borderColor={IOS.separator}>
         <Flex align="center" justify="center" mb={5} gap={1.5} opacity={0.7}>
           <Text fontSize="16px" lineHeight="1" color={IOS.secondary} className="material-symbols-outlined" sx={{ fontVariationSettings: "'FILL' 0, 'wght' 400" }}>lock</Text>
           <Text fontSize="13px" fontWeight="500" color={IOS.secondary}>Secure 256-bit encryption</Text>

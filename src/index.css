@@ -364,9 +364,10 @@ html {
   color: #0f172a;
 }
 
-/* Step 1 uses page-level scrolling (no .onboarding-shell main scroller), so allow scroll there. */
-html.onboarding-step1-scroll,
-body.onboarding-step1-scroll {
+/* Onboarding pages that use page-level scrolling (no .onboarding-shell main scroller).
+   Add/remove "onboarding-page-scroll" on html & body via useEffect in each step. */
+html.onboarding-page-scroll,
+body.onboarding-page-scroll {
   height: auto !important;
   min-height: 100dvh;
   overflow-y: auto !important;

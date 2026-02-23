@@ -58,7 +58,16 @@ export default function OnboardingStep8() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  /* ─── Enable page-level scrolling ─── */
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.classList.add('onboarding-page-scroll');
+    document.body.classList.add('onboarding-page-scroll');
+    return () => {
+      document.documentElement.classList.remove('onboarding-page-scroll');
+      document.body.classList.remove('onboarding-page-scroll');
+    };
+  }, []);
 
   /* ─── Auto-detect location ─── */
   const detectAndApply = async (userId?: string) => {

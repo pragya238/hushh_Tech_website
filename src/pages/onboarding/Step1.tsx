@@ -105,11 +105,11 @@ export default function OnboardingStep1() {
   /* ─── Scroll & body class ─── */
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.documentElement.classList.add('onboarding-step1-scroll');
-    document.body.classList.add('onboarding-step1-scroll');
+    document.documentElement.classList.add('onboarding-page-scroll');
+    document.body.classList.add('onboarding-page-scroll');
     return () => {
-      document.documentElement.classList.remove('onboarding-step1-scroll');
-      document.body.classList.remove('onboarding-step1-scroll');
+      document.documentElement.classList.remove('onboarding-page-scroll');
+      document.body.classList.remove('onboarding-page-scroll');
     };
   }, []);
 

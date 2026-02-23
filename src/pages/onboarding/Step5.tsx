@@ -74,7 +74,16 @@ export default function OnboardingStep5() {
   const [showDialPicker, setShowDialPicker] = useState(false);
   const isFooterVisible = useFooterVisibility();
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  /* ─── Enable page-level scrolling ─── */
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.classList.add('onboarding-page-scroll');
+    document.body.classList.add('onboarding-page-scroll');
+    return () => {
+      document.documentElement.classList.remove('onboarding-page-scroll');
+      document.body.classList.remove('onboarding-page-scroll');
+    };
+  }, []);
 
   /* ─── Load user + existing data ─── */
   useEffect(() => {

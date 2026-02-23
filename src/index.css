@@ -353,11 +353,10 @@ html {
 
 .onboarding-html,
 .onboarding-body {
-  background:
-    radial-gradient(120% 55% at 50% -20%, rgba(43, 140, 238, 0.18), transparent 60%),
-    linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
-  height: 100dvh;
-  overflow: hidden;
+  background: #ffffff;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .onboarding-body {
@@ -384,11 +383,11 @@ body.onboarding-step1-scroll {
 
   position: relative;
   min-height: calc(100dvh - var(--onboarding-top-space)) !important;
-  height: calc(100dvh - var(--onboarding-top-space));
+  height: auto;
   width: min(100%, var(--onboarding-shell-max-width));
   max-width: var(--onboarding-shell-max-width);
-  overflow: hidden !important;
-  overscroll-behavior: none;
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 1px solid var(--onboarding-border-color);
   border-radius: clamp(0px, 2vw, 24px);
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);

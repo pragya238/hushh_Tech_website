@@ -78,7 +78,7 @@ export default function OnboardingStep2() {
         referral_source: selectedSource,
         current_step: 2,
       });
-      navigate('/onboarding/step-4');
+      navigate('/onboarding/step-3');
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -94,7 +94,7 @@ export default function OnboardingStep2() {
         console.error('Error:', error);
       }
     }
-    navigate('/onboarding/step-4');
+    navigate('/onboarding/step-3');
   };
 
   const handleBack = () => navigate('/onboarding/step-1');

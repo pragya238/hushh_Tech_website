@@ -1,152 +1,396 @@
 /**
- * Step 4 — All UI / Presentation
- * Country selection, location detection, iOS-styled layout
+ * Step 4 — Confirm Your Residence
+ * Premium Hushh design matching Step 1 & Step 2.
+ * Logic stays in logic.ts — zero logic changes.
+ * Uses HushhTechBackHeader + HushhTechCta reusable components.
  */
-import { useStep4Logic, countries, CURRENT_STEP, TOTAL_STEPS, PROGRESS_PCT } from './logic';
-import PermissionHelpModal from '../../../components/PermissionHelpModal';
+import {
+  useStep4Logic,
+  countries,
+  CURRENT_STEP,
+  TOTAL_STEPS,
+  PROGRESS_PCT,
+} from "./logic";
+import HushhTechBackHeader from "../../../components/hushh-tech-back-header/HushhTechBackHeader";
+import HushhTechCta, {
+  HushhTechCtaVariant,
+} from "../../../components/hushh-tech-cta/HushhTechCta";
+import PermissionHelpModal from "../../../components/PermissionHelpModal";
 
 export default function OnboardingStep4() {
   const s = useStep4Logic();
 
   return (
-    <div className="bg-white min-h-[100dvh] flex flex-col relative overflow-hidden" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', sans-serif", WebkitFontSmoothing: 'antialiased' }}>
-      {/* Background layer (blurs when modal is open) */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${s.showLocationModal ? 'scale-[0.98] blur-[2px] opacity-60' : ''}`}>
-        {/* iOS Navigation Bar */}
-        <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-[#C6C6C8]/30 flex items-end justify-between px-4 pb-2" style={{ paddingTop: 'calc(env(safe-area-inset-top, 12px) + 4px)', minHeight: '48px' }}>
-          <button onClick={s.handleBack} className="text-[#007AFF] flex items-center -ml-2 active:opacity-50 transition-opacity" aria-label="Go back">
-            <span className="material-symbols-outlined text-3xl -mr-1" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400" }}>chevron_left</span>
-            <span className="text-[17px] leading-none pb-[2px]">Back</span>
-          </button>
-          <h1 className="text-[17px] font-semibold text-black absolute left-1/2 transform -translate-x-1/2">Setup</h1>
-          <button onClick={s.handleSkip} className="text-[#007AFF] font-medium text-[17px]">Skip</button>
-        </nav>
+    <div className="bg-white text-gray-900 min-h-screen antialiased flex flex-col selection:bg-black selection:text-white relative overflow-hidden">
+      {/* ═══ Background layer (blurs when location modal is open) ═══ */}
+      <div
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          s.showLocationModal
+            ? "scale-[0.98] blur-[2px] opacity-40 pointer-events-none select-none"
+            : ""
+        }`}
+      >
+        {/* ═══ Header ═══ */}
+        <HushhTechBackHeader onBackClick={s.handleBack} rightLabel="FAQs" />
 
-        <main className="flex-1 flex flex-col max-w-md mx-auto w-full px-4 pt-4 pb-52">
-          {/* Progress Bar */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[13px] font-medium text-[#8E8E93] uppercase tracking-wide">Onboarding Progress</span>
-              <span className="text-[13px] text-[#8E8E93]">Step {CURRENT_STEP}/{TOTAL_STEPS}</span>
+        <main className="px-6 flex-grow max-w-md mx-auto w-full pb-48">
+          {/* ── Progress Bar ── */}
+          <div className="py-4">
+            <div className="flex justify-between text-[11px] font-semibold tracking-wide text-gray-500 mb-3 lowercase">
+              <span>
+                step {CURRENT_STEP}/{TOTAL_STEPS}
+              </span>
+              <span>{PROGRESS_PCT}% complete</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-1 overflow-hidden">
-              <div className="bg-[#007AFF] h-1 rounded-full transition-all duration-500" style={{ width: `${PROGRESS_PCT}%` }} />
+            <div className="h-0.5 w-full bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-black transition-all duration-500"
+                style={{ width: `${PROGRESS_PCT}%` }}
+              />
             </div>
-            <p className="mt-2 text-[13px] font-medium text-[#007AFF]">{PROGRESS_PCT}% complete</p>
           </div>
 
-          {/* Title */}
-          <h1 className="text-[34px] leading-[41px] font-bold text-black mb-2 tracking-tight">Confirm your residence</h1>
-          <p className="text-[17px] text-[#8E8E93] mb-8 leading-snug">We need to know where you live and pay taxes to open your investment account.</p>
+          {/* ── Title Section ── */}
+          <section className="py-8">
+            <h3 className="text-[11px] tracking-wide text-gray-500 lowercase mb-4 font-semibold">
+              verification
+            </h3>
+            <h1
+              className="text-[2.75rem] leading-[1.1] font-normal text-black tracking-tight lowercase"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              confirm your
+              <br />
+              <span className="text-gray-400 italic font-normal">
+                residence
+              </span>
+            </h1>
+            <p className="text-sm text-gray-500 mt-4 leading-relaxed lowercase font-medium">
+              we need to know where you live and pay taxes to open your
+              investment account.
+            </p>
+          </section>
 
-          {/* Status Banners */}
-          {s.locationStatus === 'detecting' && (
-            <div className="flex items-center gap-3 p-3 mb-4 bg-blue-50 rounded-xl border border-blue-100">
-              <div className="animate-spin h-5 w-5 border-2 border-[#007AFF] border-t-transparent rounded-full shrink-0" />
-              <p className="text-sm font-medium text-[#007AFF]">Detecting your location...</p>
+          {/* ── Status Banners ── */}
+          {s.locationStatus === "detecting" && (
+            <div className="flex items-center gap-3 py-4 px-1 mb-4 border-b border-gray-100">
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                <div className="animate-spin h-5 w-5 border-2 border-black border-t-transparent rounded-full" />
+              </div>
+              <p className="text-sm font-medium text-gray-700 lowercase">
+                detecting your location...
+              </p>
             </div>
           )}
+
           {s.isSuccessStatus && (
-            <div className="flex items-start gap-3 p-4 mb-8 bg-green-50 rounded-xl">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white">
-                <span className="material-symbols-outlined text-sm font-bold" style={{ fontVariationSettings: "'FILL' 1, 'wght' 700", fontSize: '14px' }}>check</span>
+            <div className="flex items-center gap-4 py-5 px-1 mb-6 border-b border-gray-100">
+              <div className="w-10 h-10 rounded-full bg-green-50 border border-green-200 flex items-center justify-center shrink-0">
+                <span
+                  className="material-symbols-outlined text-green-600 text-lg"
+                  style={{
+                    fontVariationSettings: "'FILL' 1, 'wght' 600",
+                  }}
+                >
+                  check
+                </span>
               </div>
-              <p className="text-[15px] leading-snug text-black"><span className="font-semibold">Location detected:</span> {s.detectedLocation}</p>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 lowercase">
+                  location detected
+                </p>
+                <p className="text-xs text-gray-500 lowercase font-medium">
+                  {s.detectedLocation}
+                </p>
+              </div>
             </div>
           )}
+
           {s.isErrorStatus && (
-            <div className="mb-4">
-              <div className="flex items-center justify-between gap-3 p-3 bg-red-50 rounded-xl border border-red-100">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-red-500 text-xl" style={{ fontVariationSettings: "'FILL' 1, 'wght' 600" }}>error</span>
-                  <p className="text-sm font-medium text-red-700">{s.locationStatus === 'denied' ? 'Location access denied' : 'Could not detect location'}</p>
+            <div className="mb-6">
+              <div className="flex items-center justify-between py-4 px-1 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-red-50 border border-red-200 flex items-center justify-center shrink-0">
+                    <span
+                      className="material-symbols-outlined text-red-500 text-lg"
+                      style={{
+                        fontVariationSettings: "'FILL' 1, 'wght' 600",
+                      }}
+                    >
+                      error
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-700 lowercase">
+                    {s.locationStatus === "denied"
+                      ? "location access denied"
+                      : "could not detect location"}
+                  </p>
                 </div>
-                <button onClick={s.handleRetry} className="text-[#007AFF] text-sm font-semibold shrink-0">Retry</button>
+                <button
+                  onClick={s.handleRetry}
+                  className="text-black text-xs font-bold uppercase tracking-wide shrink-0 hover:underline"
+                >
+                  Retry
+                </button>
               </div>
-              {s.locationStatus === 'denied' && (
-                <button onClick={(e) => { e.preventDefault(); s.setShowPermissionHelp(true); }} className="mt-2 ml-1 text-xs font-semibold text-[#007AFF]">How to enable location</button>
+              {s.locationStatus === "denied" && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    s.setShowPermissionHelp(true);
+                  }}
+                  className="mt-2 ml-14 text-[11px] font-semibold text-gray-500 hover:text-black transition-colors lowercase underline"
+                >
+                  how to enable location
+                </button>
               )}
             </div>
           )}
 
-          {/* Country Selection */}
+          {/* ── Country Selection ── */}
           {s.shouldShowForm && (
-            <div className="space-y-8">
-              <div className="space-y-2">
-                <span className="px-4 text-[13px] uppercase text-[#8E8E93] font-normal">Country of Citizenship</span>
-                <div className="bg-white rounded-xl overflow-hidden border border-[#C6C6C8]/50">
-                  <label className="flex items-center justify-between pl-4 pr-3 py-3 cursor-pointer active:bg-gray-100 transition-colors relative">
-                    <span className="text-[17px] text-black">{s.citizenshipCountry || 'Select country'}</span>
-                    <span className="material-symbols-outlined text-gray-400" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400" }}>chevron_right</span>
-                    <select value={s.citizenshipCountry} onChange={(e) => s.handleCitizenshipChange(e.target.value)} disabled={s.isDetectingLocation} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                      <option disabled value="">Select country</option>
-                      {countries.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </label>
+            <section className="space-y-2 mb-8">
+              {/* Citizenship Country */}
+              <div className="py-5 border-b border-gray-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                    <span
+                      className="material-symbols-outlined text-gray-700 text-lg"
+                      style={{ fontVariationSettings: "'wght' 400" }}
+                    >
+                      flag
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 lowercase mb-0.5">
+                      country of citizenship
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={s.citizenshipCountry}
+                        onChange={(e) =>
+                          s.handleCitizenshipChange(e.target.value)
+                        }
+                        disabled={s.isDetectingLocation}
+                        className="w-full text-xs text-gray-500 font-medium lowercase bg-transparent border-none outline-none cursor-pointer appearance-none pr-6 p-0"
+                        aria-label="Select citizenship country"
+                      >
+                        <option disabled value="">
+                          select country
+                        </option>
+                        {countries.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">
+                        expand_more
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <span className="px-4 text-[13px] uppercase text-[#8E8E93] font-normal">Country of Residence</span>
-                <div className="bg-white rounded-xl overflow-hidden border border-[#C6C6C8]/50">
-                  <label className="flex items-center justify-between pl-4 pr-3 py-3 cursor-pointer active:bg-gray-100 transition-colors relative">
-                    <span className="text-[17px] text-black">{s.residenceCountry || 'Select country'}</span>
-                    <span className="material-symbols-outlined text-gray-400" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400" }}>chevron_right</span>
-                    <select value={s.residenceCountry} onChange={(e) => s.handleResidenceChange(e.target.value)} disabled={s.isDetectingLocation} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                      <option disabled value="">Select country</option>
-                      {countries.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </label>
+
+              {/* Residence Country */}
+              <div className="py-5 border-b border-gray-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                    <span
+                      className="material-symbols-outlined text-gray-700 text-lg"
+                      style={{ fontVariationSettings: "'wght' 400" }}
+                    >
+                      home
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 lowercase mb-0.5">
+                      country of residence
+                    </p>
+                    <div className="relative">
+                      <select
+                        value={s.residenceCountry}
+                        onChange={(e) =>
+                          s.handleResidenceChange(e.target.value)
+                        }
+                        disabled={s.isDetectingLocation}
+                        className="w-full text-xs text-gray-500 font-medium lowercase bg-transparent border-none outline-none cursor-pointer appearance-none pr-6 p-0"
+                        aria-label="Select residence country"
+                      >
+                        <option disabled value="">
+                          select country
+                        </option>
+                        {countries.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">
+                        expand_more
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {!s.locationDetected && s.canConfirmSelection && !s.userConfirmedManual && (
-                <button onClick={s.handleConfirmManualSelection} className="w-full py-2.5 rounded-xl bg-[#007AFF]/10 text-[#007AFF] font-semibold text-[15px] active:scale-[0.98] transition-all">Confirm Selection</button>
-              )}
-            </div>
+
+              {/* Confirm manual selection */}
+              {!s.locationDetected &&
+                s.canConfirmSelection &&
+                !s.userConfirmedManual && (
+                  <div className="pt-4">
+                    <button
+                      onClick={s.handleConfirmManualSelection}
+                      className="w-full py-3 text-xs font-bold uppercase tracking-widest text-black border border-black hover:bg-black hover:text-white transition-all active:scale-[0.98]"
+                    >
+                      Confirm Selection
+                    </button>
+                  </div>
+                )}
+            </section>
           )}
 
-          {/* Detect Location Button */}
-          {!s.showLocationModal && !s.isDetectingLocation && !s.isSuccessStatus && (
-            <button onClick={s.handleAllowLocation} className="w-full py-3 rounded-xl border border-[#007AFF]/20 bg-blue-50 text-[#007AFF] font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all">
-              <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400" }}>my_location</span>
-              Detect My Location
-            </button>
-          )}
+          {/* ── Detect Location Button ── */}
+          {!s.showLocationModal &&
+            !s.isDetectingLocation &&
+            !s.isSuccessStatus && (
+              <div className="py-5 border-b border-gray-200 mb-8">
+                <button
+                  onClick={s.handleAllowLocation}
+                  className="flex items-center gap-4 w-full text-left group"
+                  aria-label="Detect my location"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0 group-hover:bg-gray-200 transition-colors">
+                    <span
+                      className="material-symbols-outlined text-gray-700 text-lg"
+                      style={{ fontVariationSettings: "'wght' 400" }}
+                    >
+                      my_location
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 lowercase">
+                      detect my location
+                    </p>
+                    <p className="text-xs text-gray-500 lowercase font-medium">
+                      auto-fill country using gps
+                    </p>
+                  </div>
+                </button>
+              </div>
+            )}
+
+          {/* ── CTAs — Continue & Skip ── */}
+          <section className="pb-12 space-y-3 mt-4">
+            <HushhTechCta
+              variant={HushhTechCtaVariant.BLACK}
+              onClick={s.handleContinue}
+              disabled={
+                !s.canContinue || s.isLoading || s.isDetectingLocation
+              }
+            >
+              {s.isDetectingLocation
+                ? "Detecting..."
+                : s.isLoading
+                ? "Saving..."
+                : "Continue"}
+            </HushhTechCta>
+
+            <HushhTechCta
+              variant={HushhTechCtaVariant.WHITE}
+              onClick={s.handleSkip}
+            >
+              Skip
+            </HushhTechCta>
+          </section>
+
+          {/* ── Trust Badges ── */}
+          <section className="flex flex-col items-center justify-center text-center gap-2 pb-8">
+            <div className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-[12px] text-gray-600">
+                lock
+              </span>
+              <span className="text-[10px] text-gray-600 tracking-wide uppercase font-medium">
+                256 bit encryption
+              </span>
+            </div>
+          </section>
         </main>
       </div>
 
-      {/* Dark Overlay */}
-      {s.showLocationModal && <div className="absolute inset-0 z-40 bg-black/40 backdrop-blur-[1px]" />}
-
-      {/* iOS System Alert Dialog */}
+      {/* ═══ Location Permission Modal — Premium Design ═══ */}
       {s.showLocationModal && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center px-8">
-          <div className="w-[270px] overflow-hidden rounded-[14px] shadow-2xl" style={{ backgroundColor: 'rgba(245, 245, 245, 0.85)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}>
-            <div className="px-4 pt-5 pb-4 text-center">
-              <h3 className="text-[17px] font-semibold leading-[22px] text-black mb-1">Allow &ldquo;Hushh&rdquo; to use your location?</h3>
-              <p className="text-[13px] leading-[16px] font-normal text-black px-1">Your location is used to automatically determine your country and streamline the verification process.</p>
-            </div>
-            <div className="flex flex-col border-t" style={{ borderColor: 'rgba(60,60,67,0.2)' }}>
-              <button onClick={s.handleAllowLocation} className="h-[44px] w-full text-[17px] leading-[22px] text-[#007AFF] font-normal active:bg-gray-200/50 transition-colors border-b" style={{ borderColor: 'rgba(60,60,67,0.2)' }}>Allow Once</button>
-              <button onClick={s.handleAllowLocation} className="h-[44px] w-full text-[17px] leading-[22px] text-[#007AFF] font-normal active:bg-gray-200/50 transition-colors border-b" style={{ borderColor: 'rgba(60,60,67,0.2)' }}>Allow While Using App</button>
-              <button onClick={s.handleDontAllow} className="h-[44px] w-full text-[17px] leading-[22px] text-[#007AFF] font-semibold active:bg-gray-200/50 transition-colors">Don&apos;t Allow</button>
+        <>
+          {/* Dark glass overlay */}
+          <div className="fixed inset-0 z-40 bg-white/60 backdrop-blur-sm" />
+
+          {/* Modal card */}
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0">
+            <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08),0_0_1px_rgba(0,0,0,0.04)] p-8 flex flex-col items-center text-center border border-gray-100/50">
+              {/* Arrow icon in circle */}
+              <div className="mb-8">
+                <div className="w-20 h-20 rounded-full border border-gray-200 bg-white flex items-center justify-center shadow-sm">
+                  <span
+                    className="material-symbols-outlined text-black text-[2rem] -rotate-45"
+                    style={{ fontVariationSettings: "'wght' 200" }}
+                  >
+                    arrow_forward
+                  </span>
+                </div>
+              </div>
+
+              {/* Heading & description */}
+              <div className="space-y-4 mb-10 px-2">
+                <h2
+                  className="text-[1.75rem] leading-[1.2] text-black lowercase tracking-tight"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  enable location access
+                </h2>
+                <p className="text-gray-500 text-[0.85rem] leading-relaxed font-normal lowercase max-w-[90%] mx-auto">
+                  hushh uses your location to automatically determine your
+                  country and streamline the secure verification process.
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="w-full space-y-4">
+                {/* Allow while using app — primary black */}
+                <button
+                  onClick={s.handleAllowLocation}
+                  className="w-full h-12 bg-black text-white font-medium text-[0.8rem] flex items-center justify-center shadow-lg hover:shadow-xl transition-all active:scale-[0.99] border border-black hover:bg-black/90"
+                >
+                  Allow while using app
+                </button>
+
+                {/* Allow once — outlined */}
+                <button
+                  onClick={s.handleAllowLocation}
+                  className="w-full h-12 border border-black bg-white text-black font-medium text-[0.8rem] hover:bg-gray-50 transition-colors active:scale-[0.99]"
+                >
+                  Allow once
+                </button>
+
+                {/* Don't allow — text link */}
+                <div className="pt-2">
+                  <button
+                    onClick={s.handleDontAllow}
+                    className="text-xs font-medium text-gray-400 hover:text-black transition-colors"
+                  >
+                    Don&apos;t allow
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
-      {/* Fixed Footer */}
-      {!s.isFooterVisible && !s.showLocationModal && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-[#C6C6C8]/30 z-40" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }} data-onboarding-footer>
-          <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
-            <button onClick={s.handleSkip} className="h-[50px] w-full rounded-xl bg-[#F2F2F7] text-[#007AFF] font-semibold text-[17px] active:bg-gray-200 transition-colors flex items-center justify-center">Skip</button>
-            <button onClick={s.handleContinue} disabled={!s.canContinue || s.isLoading || s.isDetectingLocation} data-onboarding-cta className={`h-[50px] w-full rounded-xl font-semibold text-[17px] shadow-sm transition-all flex items-center justify-center ${s.canContinue && !s.isLoading && !s.isDetectingLocation ? 'bg-[#007AFF] text-white active:opacity-90 active:scale-[0.98]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-              {s.isDetectingLocation ? (<><div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />Detecting...</>) : s.isLoading ? 'Saving...' : 'Next'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      <PermissionHelpModal isOpen={s.showPermissionHelp} onClose={() => s.setShowPermissionHelp(false)} />
+      {/* ═══ Permission Help Modal ═══ */}
+      <PermissionHelpModal
+        isOpen={s.showPermissionHelp}
+        onClose={() => s.setShowPermissionHelp(false)}
+      />
     </div>
   );
 }

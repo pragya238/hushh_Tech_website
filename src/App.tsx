@@ -54,6 +54,7 @@ import HushhIDHeroDemo from './pages/hushhid-hero-demo';
 import FinancialLinkPage from './pages/onboarding/financial-link/ui';
 import OnboardingStep1 from './pages/onboarding/step-1/ui';
 import OnboardingStep2 from './pages/onboarding/step-2/ui';
+import OnboardingStep3 from './pages/onboarding/Step3';
 import OnboardingStep4 from './pages/onboarding/step-4/ui';
 import OnboardingStep5 from './pages/onboarding/step-5/ui';
 import OnboardingStep7 from './pages/onboarding/step-7/ui';
@@ -253,7 +254,7 @@ function App() {
             } />
             <Route path="/onboarding/step-3" element={
               <ProtectedRoute>
-                <Navigate to="/onboarding/step-4" replace />
+                <OnboardingStep3 />
               </ProtectedRoute>
             } />
             <Route path="/onboarding/step-4" element={

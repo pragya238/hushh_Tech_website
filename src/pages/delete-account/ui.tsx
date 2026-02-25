@@ -1,67 +1,75 @@
 /**
- * Delete Account Page — Matches the provided mockup exactly.
- * Clean, minimal layout with collapsible accordion sections.
- * Playfair Display heading, single CTA, expandable info rows.
+ * Delete Account Page — Revamped
+ * Apple iOS colors, Playfair Display heading, proper English capitalization.
+ * Matches Home + Fund A + Community + Profile design language.
  * Logic stays in logic.ts — zero logic changes.
  */
 import React, { useState } from "react";
 import { useDeleteAccountLogic } from "./logic";
 import HushhTechHeader from "../../components/hushh-tech-header/HushhTechHeader";
 import HushhTechFooter from "../../components/hushh-tech-footer/HushhTechFooter";
+import HushhTechCta, { HushhTechCtaVariant } from "../../components/hushh-tech-cta/HushhTechCta";
 import DeleteAccountModal from "../../components/DeleteAccountModal";
 import { Helmet } from "react-helmet";
+
+/* ── Playfair heading style ── */
+const playfair = { fontFamily: "'Playfair Display', serif" };
 
 /* ── Accordion section data ── */
 const ACCORDION_SECTIONS = [
   {
     id: "how-to",
     icon: "delete_forever",
-    title: "how to delete your account",
-    subtitle: "step-by-step process",
+    iconColor: "text-red-500",
+    title: "How to Delete Your Account",
+    subtitle: "Step-by-step process",
     content: [
-      { step: "1", text: "click the 'permanently delete account' button above" },
-      { step: "2", text: "type DELETE in the confirmation field" },
-      { step: "3", text: "confirm your decision — this cannot be undone" },
-      { step: "4", text: "your account and all data will be permanently removed" },
+      { step: "1", text: "Click the 'Permanently Delete Account' button above." },
+      { step: "2", text: "Type DELETE in the confirmation field." },
+      { step: "3", text: "Confirm your decision — this cannot be undone." },
+      { step: "4", text: "Your account and all data will be permanently removed." },
     ],
   },
   {
     id: "data-deleted",
     icon: "folder_off",
-    title: "data that will be permanently deleted",
-    subtitle: "profile, history & preferences",
+    iconColor: "text-hushh-blue",
+    title: "Data That Will Be Permanently Deleted",
+    subtitle: "Profile, history & preferences",
     content: [
-      { step: "•", text: "account credentials & profile information" },
-      { step: "•", text: "investor profile & preferences" },
-      { step: "•", text: "onboarding data & responses" },
-      { step: "•", text: "kyc verification data" },
-      { step: "•", text: "chat history with ai assistant" },
-      { step: "•", text: "uploaded documents & files" },
-      { step: "•", text: "privacy settings & data vault" },
+      { step: "•", text: "Account credentials & profile information" },
+      { step: "•", text: "Investor profile & preferences" },
+      { step: "•", text: "Onboarding data & responses" },
+      { step: "•", text: "KYC verification data" },
+      { step: "•", text: "Chat history with AI assistant" },
+      { step: "•", text: "Uploaded documents & files" },
+      { step: "•", text: "Privacy settings & data vault" },
     ],
   },
   {
     id: "retention",
     icon: "history_toggle_off",
-    title: "data retention policy",
-    subtitle: "what we keep for compliance",
+    iconColor: "text-ios-yellow",
+    title: "Data Retention Policy",
+    subtitle: "What we keep for compliance",
     content: [
-      { step: "→", text: "all personal data is deleted immediately upon confirmation" },
-      { step: "→", text: "encrypted backups are purged within 30 days" },
-      { step: "→", text: "transaction records retained for 7 years per financial regulations" },
-      { step: "→", text: "anonymized aggregated analytics that cannot identify you may be kept" },
+      { step: "→", text: "All personal data is deleted immediately upon confirmation." },
+      { step: "→", text: "Encrypted backups are purged within 30 days." },
+      { step: "→", text: "Transaction records retained for 7 years per financial regulations." },
+      { step: "→", text: "Anonymized aggregated analytics that cannot identify you may be kept." },
     ],
   },
   {
     id: "notice",
     icon: "warning",
-    title: "important notice",
-    subtitle: "read before proceeding",
+    iconColor: "text-ios-red",
+    title: "Important Notice",
+    subtitle: "Read before proceeding",
     content: [
-      { step: "!", text: "this action is permanent and cannot be undone" },
-      { step: "!", text: "you will lose access to all hushh services immediately" },
-      { step: "!", text: "any active investments or pending transactions should be resolved first" },
-      { step: "!", text: "contact support@hushh.ai if you need help before deleting" },
+      { step: "!", text: "This action is permanent and cannot be undone." },
+      { step: "!", text: "You will lose access to all Hushh services immediately." },
+      { step: "!", text: "Any active investments or pending transactions should be resolved first." },
+      { step: "!", text: "Contact support@hushh.ai if you need help before deleting." },
     ],
   },
 ];
@@ -78,7 +86,7 @@ const DeleteAccountPage: React.FC = () => {
     handleLoginRedirect,
   } = useDeleteAccountLogic();
 
-  /* Accordion expand/collapse state — purely UI, no business logic */
+  /* Accordion expand/collapse state */
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleToggle = (id: string) => {
@@ -95,7 +103,7 @@ const DeleteAccountPage: React.FC = () => {
         />
       </Helmet>
 
-      <div className="bg-white text-gray-900 min-h-screen antialiased flex flex-col selection:bg-black selection:text-white relative overflow-hidden">
+      <div className="bg-white text-gray-900 min-h-screen antialiased flex flex-col selection:bg-hushh-blue selection:text-white relative overflow-hidden">
         {/* ═══ Background layer (blurs when modal is open) ═══ */}
         <div
           className={`flex-1 flex flex-col transition-all duration-300 ${
@@ -111,30 +119,30 @@ const DeleteAccountPage: React.FC = () => {
             {/* ── Title Section ── */}
             <div className="mb-12">
               <h1
-                className="text-4xl text-black mb-3 lowercase leading-tight"
-                style={{ fontFamily: "'Playfair Display', serif" }}
+                className="text-4xl text-black mb-3 leading-tight font-serif font-normal"
+                style={playfair}
               >
                 {isLoading
-                  ? "checking session..."
+                  ? "Checking Session..."
                   : isLoggedIn
-                  ? "ready to delete your account?"
-                  : "login to delete your account"}
+                  ? <>Ready to Delete Your{" "}<span className="text-gray-400 italic font-light">Account?</span></>
+                  : <>Login to Delete Your{" "}<span className="text-gray-400 italic font-light">Account.</span></>}
               </h1>
 
               {isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-black rounded-full" />
-                  <p className="text-gray-500 text-sm lowercase">
-                    verifying session...
+                  <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-hushh-blue rounded-full" />
+                  <p className="text-gray-500 text-sm">
+                    Verifying session...
                   </p>
                 </div>
               ) : isLoggedIn && userEmail ? (
-                <p className="text-gray-500 text-sm font-normal lowercase">
-                  logged in as: {userEmail}
+                <p className="text-gray-500 text-sm font-light">
+                  Logged in as: {userEmail}
                 </p>
               ) : (
-                <p className="text-gray-500 text-sm font-normal lowercase">
-                  please login to proceed with account deletion
+                <p className="text-gray-500 text-sm font-light">
+                  Please login to proceed with account deletion.
                 </p>
               )}
             </div>
@@ -142,21 +150,19 @@ const DeleteAccountPage: React.FC = () => {
             {/* ── Primary CTA ── */}
             <div className="mb-16">
               {isLoggedIn ? (
-                <button
-                  type="button"
+                <HushhTechCta
+                  variant={HushhTechCtaVariant.BLACK}
                   onClick={onOpen}
-                  className="w-full bg-black text-white h-14 font-medium text-sm flex items-center justify-center hover:bg-neutral-800 transition-colors active:scale-[0.99] shadow-[0_4px_20px_rgba(0,0,0,0.03)] lowercase"
                 >
-                  permanently delete account
-                </button>
+                  Permanently Delete Account
+                </HushhTechCta>
               ) : (
-                <button
-                  type="button"
+                <HushhTechCta
+                  variant={HushhTechCtaVariant.BLACK}
                   onClick={handleLoginRedirect}
-                  className="w-full bg-black text-white h-14 font-medium text-sm flex items-center justify-center hover:bg-neutral-800 transition-colors active:scale-[0.99] shadow-[0_4px_20px_rgba(0,0,0,0.03)] lowercase"
                 >
-                  login to continue
-                </button>
+                  Login to Continue
+                </HushhTechCta>
               )}
             </div>
 
@@ -171,14 +177,14 @@ const DeleteAccountPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleToggle(section.id)}
-                      className="group w-full py-5 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors -mx-2 px-2"
+                      className="group w-full py-5 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition-colors -mx-2 px-2"
                       aria-expanded={isExpanded}
                       aria-controls={`accordion-${section.id}`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-white transition-colors shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-white group-hover:border-gray-200 border border-transparent transition-all shrink-0">
                           <span
-                            className="material-symbols-outlined text-gray-500 text-[1.25rem]"
+                            className={`material-symbols-outlined ${section.iconColor} text-[1.25rem]`}
                             style={{
                               fontVariationSettings:
                                 "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24",
@@ -188,10 +194,10 @@ const DeleteAccountPage: React.FC = () => {
                           </span>
                         </div>
                         <div className="flex flex-col text-left">
-                          <span className="text-sm font-medium text-black lowercase">
+                          <span className="text-sm font-medium text-black">
                             {section.title}
                           </span>
-                          <span className="text-xs text-gray-500 mt-0.5 lowercase">
+                          <span className="text-xs text-gray-400 mt-0.5 font-light">
                             {section.subtitle}
                           </span>
                         </div>
@@ -223,7 +229,7 @@ const DeleteAccountPage: React.FC = () => {
                             <span className="text-xs text-gray-400 font-semibold w-4 shrink-0 pt-0.5">
                               {item.step}
                             </span>
-                            <p className="text-sm text-gray-600 lowercase leading-relaxed">
+                            <p className="text-sm text-gray-600 leading-relaxed">
                               {item.text}
                             </p>
                           </div>
@@ -241,7 +247,7 @@ const DeleteAccountPage: React.FC = () => {
             {/* ── Trust Badge ── */}
             <div className="mt-auto pt-8 flex items-center justify-center gap-2 opacity-60">
               <span
-                className="material-symbols-outlined text-[1.2rem] text-gray-500"
+                className="material-symbols-outlined text-[1.2rem] text-hushh-blue"
                 style={{
                   fontVariationSettings:
                     "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24",
@@ -250,12 +256,12 @@ const DeleteAccountPage: React.FC = () => {
                 lock
               </span>
               <span className="text-[0.65rem] text-gray-500 tracking-wide font-medium uppercase">
-                256 bit encryption
+                256 Bit Encryption
               </span>
             </div>
           </main>
 
-          {/* ═══ Common Footer with Navigation ═══ */}
+          {/* ═══ Common Footer ═══ */}
           <HushhTechFooter />
         </div>
 

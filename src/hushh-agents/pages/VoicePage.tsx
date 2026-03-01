@@ -105,7 +105,7 @@ export default function VoicePage() {
       // Get WebSocket URL - try Supabase Edge Function first, fallback to direct connection
       let wsUrl: string;
       
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wowsvdyzwvujfzfswqpm.supabase.co';
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ibsisfnjxeowvdtvgzff.supabase.co';
       
       try {
         const tokenRes = await fetch(`${supabaseUrl}/functions/v1/gemini-voice-token`, {

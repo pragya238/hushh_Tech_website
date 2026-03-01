@@ -187,11 +187,12 @@ async function withRetry<T>(
 }
 
 // =============================================================================
-// VERCEL SERVERLESS FUNCTION CONFIGURATION
+// SUPABASE EDGE FUNCTION CONFIGURATION
 // =============================================================================
 
-// Vercel API endpoint - API key is secure on server side
-const API_ENDPOINT = '/api/gemini-chat';
+// Supabase Edge Function URL - API key is secure on server side
+const SUPABASE_PROJECT_ID = 'ibsisfnjxeowvdtvgzff';
+const API_ENDPOINT = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/gemini-chat`;
 
 // =============================================================================
 // MAIN CHAT FUNCTION (SECURE - USES EDGE FUNCTION)

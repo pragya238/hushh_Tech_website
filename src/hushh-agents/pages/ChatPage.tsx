@@ -190,10 +190,10 @@ export default function ChatPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="bg-white text-gray-900 min-h-screen antialiased flex flex-col selection:bg-hushh-blue selection:text-white">
+    <div className="bg-white text-gray-900 min-h-screen min-h-[100dvh] antialiased flex flex-col selection:bg-hushh-blue selection:text-white">
       
       {/* ═══ Custom Chat Header ═══ */}
-      <header className="px-6 py-4 flex justify-between items-center border-b border-gray-100 sticky top-0 bg-white/95 backdrop-blur-md z-50">
+      <header className="px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center border-b border-gray-100 sticky top-0 bg-white/95 backdrop-blur-md z-50">
         <button
           onClick={() => navigate('/hushh-agents')}
           className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors"
@@ -287,7 +287,7 @@ export default function ChatPage() {
       )}
 
       {/* ═══ Main Chat Area ═══ */}
-      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 md:px-6">
+      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-3 sm:px-4 md:px-6 overflow-hidden">
         
         {/* ── Chat Header Bar ── */}
         <div className="flex items-center justify-between py-4 border-b border-gray-100">
@@ -332,7 +332,7 @@ export default function ChatPage() {
         </div>
 
         {/* ── Messages Area ── */}
-        <div className="flex-1 overflow-y-auto py-6 min-h-[400px] max-h-[calc(100vh-300px)]">
+        <div className="flex-1 overflow-y-auto py-4 sm:py-6 min-h-[200px]">
           {messages.length === 0 ? (
             // Empty state
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
@@ -377,7 +377,7 @@ export default function ChatPage() {
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] md:max-w-[70%] ${
+                    className={`max-w-[88%] sm:max-w-[85%] md:max-w-[70%] ${
                       message.role === 'user'
                         ? 'bg-ios-dark text-white rounded-2xl rounded-br-md px-4 py-3'
                         : 'bg-ios-gray-bg text-gray-900 rounded-2xl rounded-bl-md px-4 py-3 border border-gray-200/60'
@@ -443,8 +443,8 @@ export default function ChatPage() {
         )}
 
         {/* ── Input Area ── */}
-        <div className="py-4 border-t border-gray-100">
-          <div className="flex items-end gap-3">
+        <div className="py-3 sm:py-4 border-t border-gray-100 pb-[env(safe-area-inset-bottom,12px)]">
+          <div className="flex items-end gap-2 sm:gap-3">
             <div className="flex-1 relative">
               <textarea
                 ref={inputRef}

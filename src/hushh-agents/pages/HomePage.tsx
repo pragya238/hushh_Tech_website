@@ -167,10 +167,10 @@ export default function AgentsHomePage() {
       </header>
 
       {/* ═══ Main Content ═══ */}
-      <main className="px-6 flex-grow max-w-md mx-auto w-full pb-48">
+      <main className="px-4 sm:px-6 flex-grow max-w-md md:max-w-2xl lg:max-w-4xl mx-auto w-full pb-32 md:pb-16">
 
         {/* ── Hero ── */}
-        <section className="pt-8 pb-6">
+        <section className="pt-6 sm:pt-8 pb-6">
           <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-2 font-medium">
             Your AI Companions
           </p>
@@ -191,7 +191,7 @@ export default function AgentsHomePage() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-3 font-medium">
             Available Agents
           </p>
-          <div className="space-y-3">
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
             {/* Kirkland Agents Directory — Priority */}
             <AgentNudge
               title="Kirkland Agents"
@@ -251,7 +251,7 @@ export default function AgentsHomePage() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-3 font-medium">
             Capabilities
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { icon: 'chat', label: 'Chat', desc: 'Natural conversations', color: APPLE.blue },
               { icon: 'translate', label: 'Languages', desc: 'EN · HI · TA', color: APPLE.green },
@@ -282,7 +282,7 @@ export default function AgentsHomePage() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-3 font-medium">
             Coming Soon
           </p>
-          <div className="space-y-3">
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
             {[
               { name: 'Kai', desc: 'Investment analysis & market insights', icon: 'trending_up', color: APPLE.teal },
               { name: 'Luna', desc: 'Document processing & summaries', icon: 'description', color: APPLE.pink },

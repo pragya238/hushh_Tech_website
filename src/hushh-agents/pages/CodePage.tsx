@@ -280,10 +280,10 @@ export default function CodePage() {
   const messageCount = thread.filter((m) => m.role === 'user').length;
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-gray-100 flex flex-col antialiased">
+    <div className="min-h-screen min-h-[100dvh] bg-[#0d1117] text-gray-100 flex flex-col antialiased">
 
       {/* ═══ Header ═══ */}
-      <header className="px-4 md:px-6 py-4 flex justify-between items-center border-b border-gray-800/60 sticky top-0 bg-[#0d1117]/95 backdrop-blur-md z-50">
+      <header className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex justify-between items-center border-b border-gray-800/60 sticky top-0 bg-[#0d1117]/95 backdrop-blur-md z-50">
         <Link to="/hushh-agents" className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-purple-500/20 flex items-center justify-center">
             <img src={HushhLogo} alt="Hushh" className="w-6 h-6 object-contain" />
@@ -395,10 +395,10 @@ export default function CodePage() {
       )}
 
       {/* ═══ Main ═══ */}
-      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 md:px-6">
+      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-3 sm:px-4 md:px-6 overflow-hidden">
 
         {/* Mode & Language selectors (sticky below header) */}
-        <div className="sticky top-[65px] z-40 bg-[#0d1117]/95 backdrop-blur-md py-3 space-y-2 border-b border-gray-800/30">
+        <div className="sticky top-[57px] sm:top-[65px] z-40 bg-[#0d1117]/95 backdrop-blur-md py-2 sm:py-3 space-y-2 border-b border-gray-800/30">
           {/* Mode Selector */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {MODES.map((m) => (
@@ -597,7 +597,7 @@ export default function CodePage() {
         </div>
 
         {/* ═══ Input Area (sticky bottom) ═══ */}
-        <div className="sticky bottom-0 bg-[#0d1117] border-t border-gray-800/60 py-3">
+        <div className="sticky bottom-0 bg-[#0d1117] border-t border-gray-800/60 py-2 sm:py-3 pb-[env(safe-area-inset-bottom,8px)]">
           <div className="relative">
             <textarea
               ref={textareaRef}
@@ -612,7 +612,7 @@ export default function CodePage() {
                   : mode === 'explain' ? 'Paste code you want explained...'
                   : 'Paste code to optimize...'
               }
-              className="w-full min-h-[80px] md:min-h-[100px] bg-gray-900/80 border border-gray-800 rounded-2xl p-4 pr-32 text-sm font-mono text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
+              className="w-full min-h-[64px] sm:min-h-[80px] md:min-h-[100px] bg-gray-900/80 border border-gray-800 rounded-2xl p-3 sm:p-4 pr-28 sm:pr-32 text-sm font-mono text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all"
               rows={3}
             />
 

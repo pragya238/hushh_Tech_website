@@ -23,6 +23,7 @@ const VoicePage = lazy(() => import('./pages/VoicePage'));
 const CodePage = lazy(() => import('./pages/CodePage'));
 const KirklandAgentsPage = lazy(() => import('./pages/KirklandAgentsPage'));
 const AgentDetailPage = lazy(() => import('./pages/AgentDetailPage'));
+const AgentChatPage = lazy(() => import('./pages/AgentChatPage'));
 
 // Playfair heading style
 const playfair = { fontFamily: "'Playfair Display', serif" };
@@ -273,6 +274,12 @@ const App: React.FC = () => {
         <Route
           path="kirkland/:agentId"
           element={<AgentDetailPage />}
+        />
+
+        {/* Kirkland Agent - Chat (Gemini-powered) */}
+        <Route
+          path="kirkland/:agentId/chat"
+          element={<AgentChatPage />}
         />
 
         {/* Chat with specific agent */}

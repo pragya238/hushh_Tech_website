@@ -5,7 +5,7 @@
  * Follows KYC onboarding UI patterns.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import HushhTechBackHeader from '../../components/hushh-tech-back-header/HushhTechBackHeader';
@@ -36,12 +36,6 @@ interface AgentFull {
   categories: string[];
   is_closed: boolean;
   photo_url: string | null;
-}
-
-/** Chat message type */
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
 }
 
 /** Format full address */
@@ -101,209 +95,6 @@ const InfoRow: React.FC<{
   </button>
 );
 
-/** Build system instruction for agent chatbot */
-const buildAgentSystemInstruction = (agent: AgentFull): string => {
-  const address = formatAddress(agent);
-  const cats = agent.categories?.join(', ') || 'General';
-  const rating = agent.avg_rating ? `${agent.avg_rating.toFixed(1)}/5 (${agent.review_count} reviews)` : 'No ratings yet';
-  const phone = agent.phone || 'Not available';
-  const status = agent.is_closed ? 'Currently Closed' : 'Open';
-
-  return `You are the AI assistant for "${agent.name}", a local business/agent powered by Hushh Intelligence.
-
-Here are the agent's details:
-- Name: ${agent.name}
-- Categories: ${cats}
-- Address: ${address}
-- Phone: ${phone}
-- Rating: ${rating}
-- Status: ${status}
-- MCP Endpoint: https://hushhtech.com/api/mcp/agents/${agent.id}
-
-Your role:
-1. Answer questions about this agent's services, location, and contact information.
-2. Help users understand what services this agent provides based on their categories.
-3. Be helpful, professional, and concise.
-4. If asked about pricing or specific offerings you don't know, suggest the user contact the agent directly.
-5. Always mention you are powered by Hushh Intelligence when asked about yourself.
-6. Keep responses short and to the point.`;
-};
-
-/** Agent Chatbot Component */
-const AgentChatbot: React.FC<{ agent: AgentFull }> = ({ agent }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleSend = async () => {
-    const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
-
-    const userMsg: ChatMessage = { role: 'user', content: trimmed };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput('');
-    setIsLoading(true);
-
-    try {
-      // Build conversation history for API
-      const history = [...messages, userMsg].map((m) => ({
-        role: m.role,
-        parts: [{ text: m.content }],
-      }));
-
-      const response = await fetch('/api/gemini-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: trimmed,
-          history,
-          systemInstruction: buildAgentSystemInstruction(agent),
-        }),
-      });
-
-      if (!response.ok) throw new Error('Chat request failed');
-
-      const data = await response.json();
-      const assistantText = data.response || data.text || 'I could not generate a response.';
-
-      setMessages((prev) => [...prev, { role: 'assistant', content: assistantText }]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="w-full flex items-center gap-3.5 p-4 rounded-2xl border border-emerald-200/60 bg-emerald-50/40 hover:border-emerald-300 transition-all active:scale-[0.99]"
-      >
-        <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-[18px] text-emerald-600">smart_toy</span>
-        </div>
-        <div className="flex-1 text-left">
-          <p className="text-[13px] text-gray-900 font-medium">Chat with {agent.name}</p>
-          <p className="text-[11px] text-gray-400 font-light mt-0.5">Powered by Hushh Intelligence</p>
-        </div>
-        <span className="material-symbols-outlined text-emerald-400 text-[18px]">chat</span>
-      </button>
-    );
-  }
-
-  return (
-    <div className="border border-gray-200/60 rounded-2xl overflow-hidden bg-white">
-      {/* Chat Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
-            <span className="material-symbols-outlined text-[14px] text-emerald-600">smart_toy</span>
-          </div>
-          <div>
-            <p className="text-[12px] font-semibold text-gray-900">{agent.name} AI</p>
-            <p className="text-[9px] text-gray-400">Powered by Hushh Intelligence</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setIsOpen(false)}
-          className="w-7 h-7 rounded-lg hover:bg-gray-200 flex items-center justify-center transition-colors"
-          aria-label="Close chat"
-        >
-          <span className="material-symbols-outlined text-[16px] text-gray-400">close</span>
-        </button>
-      </div>
-
-      {/* Messages Area */}
-      <div className="h-[280px] overflow-y-auto px-4 py-3 space-y-3">
-        {messages.length === 0 && (
-          <div className="text-center py-8">
-            <span className="material-symbols-outlined text-gray-200 text-[32px] mb-2 block">forum</span>
-            <p className="text-[12px] text-gray-400 font-light">
-              Ask about {agent.name}'s services, hours, or location
-            </p>
-            {/* Quick suggestions */}
-            <div className="flex flex-wrap justify-center gap-1.5 mt-3">
-              {['What services do you offer?', 'Where are you located?', 'How can I contact you?'].map((q) => (
-                <button
-                  key={q}
-                  onClick={() => { setInput(q); }}
-                  className="px-2.5 py-1 bg-gray-100 text-gray-500 text-[10px] rounded-full hover:bg-gray-200 transition-colors"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-[12px] leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-gray-900 text-white rounded-br-sm'
-                  : 'bg-gray-100 text-gray-800 rounded-bl-sm'
-              }`}
-            >
-              {msg.content}
-            </div>
-          </div>
-        ))}
-
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-400 px-4 py-2.5 rounded-2xl rounded-bl-sm text-[12px]">
-              <span className="animate-pulse">Thinking...</span>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input Area */}
-      <div className="px-3 py-2.5 border-t border-gray-100 flex items-center gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask something..."
-          className="flex-1 px-3.5 py-2.5 bg-gray-50 border border-gray-200/60 rounded-xl text-[12px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-emerald-200"
-        />
-        <button
-          onClick={handleSend}
-          disabled={!input.trim() || isLoading}
-          className="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center shrink-0 disabled:opacity-30 transition-opacity"
-          aria-label="Send message"
-        >
-          <span className="material-symbols-outlined text-[16px]">send</span>
-        </button>
-      </div>
-    </div>
-  );
-};
 
 /** MCP Endpoint Row with copy */
 const McpEndpointRow: React.FC<{ agentId: string }> = ({ agentId }) => {
@@ -469,12 +260,24 @@ const AgentDetailPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ── Agent Chatbot ── */}
+        {/* ── Chat with Agent (navigates to full chat page) ── */}
         <section className="pb-6">
           <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-3 font-medium">
             AI Assistant
           </p>
-          <AgentChatbot agent={agent} />
+          <button
+            onClick={() => navigate(`/hushh-agents/kirkland/${agent.id}/chat`)}
+            className="w-full flex items-center gap-3.5 p-4 rounded-2xl border border-emerald-200/60 bg-emerald-50/40 hover:border-emerald-300 transition-all active:scale-[0.99]"
+          >
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[18px] text-emerald-600">smart_toy</span>
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-[13px] text-gray-900 font-medium">Chat with {agent.name}</p>
+              <p className="text-[11px] text-gray-400 font-light mt-0.5">Powered by Gemini · Hushh Intelligence</p>
+            </div>
+            <span className="material-symbols-outlined text-emerald-400 text-[18px]">arrow_forward</span>
+          </button>
         </section>
 
         {/* ── MCP Endpoint ── */}

@@ -1,16 +1,17 @@
 /**
  * Hushh Intelligence Service
  * 
- * Production-grade wrapper for Google Gemini API with:
- * - Multiple API key fallback (if one fails, tries the next)
+ * Production-grade wrapper for Hushh AI API with:
+ * - Secure backend proxy via Supabase Edge Function (API key never exposed)
  * - Automatic retry with exponential backoff
  * - White-labeled as "Hushh Intelligence"
  * 
- * All references to Google/Gemini are internal only.
- * User-facing responses should use "Hushh" branding.
+ * All AI calls go through Supabase Edge Function for security.
+ * API keys are stored securely in Supabase secrets, never in frontend.
  */
 
 import { SUPPORTED_LANGUAGES, DEFAULT_AGENT_CONFIG, HUSHH_BRANDING, GCP_CONFIG } from '../core/constants';
+import config from '../../resources/config/config';
 import type { 
   HushhAgentMessage, 
   ChatRequest, 
@@ -186,69 +187,84 @@ async function withRetry<T>(
 }
 
 // =============================================================================
-// MAIN CHAT FUNCTION WITH FALLBACK
+// SUPABASE EDGE FUNCTION CONFIGURATION
+// =============================================================================
+
+// Supabase Edge Function URL - API key is secure on server side
+const SUPABASE_PROJECT_ID = 'ibsisfnjxeowvdtvgzff';
+const EDGE_FUNCTION_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/gemini-chat`;
+
+// =============================================================================
+// MAIN CHAT FUNCTION (SECURE - USES EDGE FUNCTION)
 // =============================================================================
 
 /**
- * Send a chat message to Hushh Intelligence (Gemini API with fallback)
+ * Send a chat message to Hushh Intelligence via Supabase Edge Function.
+ * The API key is stored securely on the server - never exposed to frontend.
  */
 export async function sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
   const { message, history = [], agentId, language = 'en-US', systemPrompt } = request;
   
-  const keys = getApiKeys();
+  console.log('[Hushh Intelligence] Sending message via secure edge function...');
   
-  if (keys.length === 0) {
+  try {
+    // Build history in format expected by edge function
+    const formattedHistory = history.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }],
+    }));
+    
+    // Call the secure Supabase Edge Function
+    const response = await withRetry(async () => {
+      const res = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Use Supabase anon key for public access
+          'apikey': config.SUPABASE_ANON_KEY || '',
+        },
+        body: JSON.stringify({
+          message,
+          history: formattedHistory,
+          language,
+          model: DEFAULT_MODEL,
+        }),
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Edge function error ${res.status}: ${errorText}`);
+      }
+      
+      return res.json();
+    });
+    
+    if (response.error) {
+      console.error('[Hushh Intelligence] Edge function returned error:', response.error);
+      return {
+        success: false,
+        message: '',
+        error: response.error,
+      };
+    }
+    
+    console.log('[Hushh Intelligence] Response received successfully');
+    
+    return {
+      success: true,
+      message: response.response || response.message || '',
+    };
+    
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Hushh Intelligence] Chat failed:', errorMsg);
+    
     return {
       success: false,
       message: '',
-      error: 'No API keys configured. Please add VITE_GEMINI_API_KEY to your environment.',
+      error: `Chat service error: ${errorMsg}`,
     };
   }
-  
-  // Try each key until one works
-  for (let keyIndex = 0; keyIndex < keys.length; keyIndex++) {
-    const apiKey = keys[(currentKeyIndex + keyIndex) % keys.length];
-    const actualKeyIndex = (currentKeyIndex + keyIndex) % keys.length;
-    
-    // Skip if this key has already failed recently
-    if (failedKeys.has(actualKeyIndex) && keyIndex < keys.length - 1) {
-      continue;
-    }
-    
-    try {
-      const response = await sendWithKey(apiKey, message, history, systemPrompt, language);
-      
-      // Success! Reset failed keys and update current index
-      resetFailedKeys();
-      currentKeyIndex = actualKeyIndex;
-      
-      return {
-        success: true,
-        message: response,
-      };
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[Hushh Intelligence] Key ${actualKeyIndex + 1} failed:`, errorMsg);
-      
-      // Mark this key as failed
-      markKeyAsFailed(actualKeyIndex);
-      
-      // If it's the last key, return error
-      if (keyIndex === keys.length - 1) {
-        return {
-          success: false,
-          message: '',
-          error: `All API keys failed. Last error: ${errorMsg}`,
-        };
-      }
-    }
-  }
-  
-  return {
-    success: false,
-    message: '',
-    error: 'Unexpected error in chat service',
-  };
 }
 
 /**

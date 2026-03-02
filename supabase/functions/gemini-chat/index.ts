@@ -130,8 +130,7 @@ serve(async (req: Request) => {
     console.log(`[gemini-chat] Found ${API_KEYS.length} valid API keys`);
     
     // Rotate keys based on timestamp for load distribution
-    const keyIndex = Math.floor(Date.now() / 1000) % API_KEYS.length;
-    const GEMINI_API_KEY = API_KEYS[keyIndex];
+    const startKeyIndex = Math.floor(Date.now() / 1000) % API_KEYS.length;
 
     // Initialize Supabase client for logging
     const supabase = getSupabaseClient();
@@ -194,43 +193,66 @@ Important: Never mention that you are powered by Gemini or Google. You are Hushh
       },
     ];
 
-    // Call Gemini API
-    const geminiUrl = `${GEMINI_API_URL}/${model}:generateContent?key=${GEMINI_API_KEY}`;
-    
-    const geminiResponse = await fetch(geminiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    // Build request body (reused across retries)
+    const requestBody = JSON.stringify({
+      contents,
+      systemInstruction: {
+        parts: [{ text: systemInstruction }],
       },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: {
-          parts: [{ text: systemInstruction }],
-        },
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2048,
-          topP: 0.9,
-          topK: 40,
-        },
-        safetySettings: [
-          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-        ],
-      }),
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+        topP: 0.9,
+        topK: 40,
+      },
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+      ],
     });
+
+    // Try each API key until one works (retry on failure)
+    let geminiResponse: Response | null = null;
+    let lastError = "";
+
+    for (let attempt = 0; attempt < API_KEYS.length; attempt++) {
+      const keyIdx = (startKeyIndex + attempt) % API_KEYS.length;
+      const apiKey = API_KEYS[keyIdx];
+      const geminiUrl = `${GEMINI_API_URL}/${model}:generateContent?key=${apiKey}`;
+
+      console.log(`[gemini-chat] Trying key ${attempt + 1}/${API_KEYS.length} (index ${keyIdx})`);
+
+      try {
+        const resp = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: requestBody,
+        });
+
+        if (resp.ok) {
+          geminiResponse = resp;
+          break;
+        }
+
+        // Key failed — log and try next
+        lastError = await resp.text();
+        console.warn(`[gemini-chat] Key ${keyIdx} failed (${resp.status}): ${lastError.substring(0, 200)}`);
+      } catch (fetchErr) {
+        lastError = String(fetchErr);
+        console.warn(`[gemini-chat] Key ${keyIdx} fetch error: ${lastError}`);
+      }
+    }
 
     const responseTime = Date.now() - startTime;
 
-    if (!geminiResponse.ok) {
-      const errorData = await geminiResponse.text();
-      console.error(`[gemini-chat] Gemini API error: ${geminiResponse.status}`, errorData);
+    if (!geminiResponse || !geminiResponse.ok) {
+      console.error(`[gemini-chat] All ${API_KEYS.length} API keys failed. Last error: ${lastError.substring(0, 200)}`);
       return new Response(
         JSON.stringify({ 
           error: "AI service error", 
-          details: geminiResponse.status === 403 ? "API key issue" : "Service unavailable" 
+          details: "All API keys exhausted. Service temporarily unavailable." 
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

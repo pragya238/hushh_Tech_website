@@ -392,20 +392,18 @@ const FundA = () => {
         </div>
 
         {/* ── Join / CTA ── */}
-        <section className="border-t border-gray-200 pt-8 mb-8 md:flex md:items-start md:justify-between md:gap-12">
-          <div className="md:flex-1">
-            <h2
-              className="text-[22px] md:text-[28px] font-medium text-black tracking-tight mb-2"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              {joinSectionTitle}
-            </h2>
-            <p className="text-[13px] md:text-sm text-gray-400 font-light leading-relaxed mb-8 md:mb-0 max-w-xs md:max-w-md">
-              {joinSectionDescription}
-            </p>
-          </div>
+        <section className="border-t border-gray-200 pt-8 mb-8">
+          <h2
+            className="text-[22px] md:text-[28px] font-medium text-black tracking-tight mb-2"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            {joinSectionTitle}
+          </h2>
+          <p className="text-[13px] md:text-sm text-gray-400 font-light leading-relaxed mb-8 max-w-xs md:max-w-lg">
+            {joinSectionDescription}
+          </p>
 
-          <div className="space-y-3 md:flex md:gap-3 md:space-y-0 md:shrink-0">
+          <div className="flex flex-col md:flex-row gap-3 md:w-fit">
             <HushhTechCta
               variant={HushhTechCtaVariant.BLACK}
               onClick={handleCompleteProfile}

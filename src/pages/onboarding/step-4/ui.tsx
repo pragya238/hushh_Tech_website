@@ -17,6 +17,11 @@ import HushhTechCta, {
 } from "../../../components/hushh-tech-cta/HushhTechCta";
 import PermissionHelpModal from "../../../components/PermissionHelpModal";
 
+/** Skeleton shimmer bar — shown while GPS detection is in progress */
+const SkeletonBar = ({ width = "w-3/4" }: { width?: string }) => (
+  <div className={`h-4 ${width} rounded bg-gray-200 animate-pulse`} />
+);
+
 export default function OnboardingStep4() {
   const s = useStep4Logic();
 
@@ -327,15 +332,19 @@ export default function OnboardingStep4() {
                       >
                         Address Line 1
                       </label>
-                      <input
-                        id="addressLine1"
-                        type="text"
-                        value={s.addressLine1}
-                        onChange={(e) => s.handleAddressLine1Change(e.target.value)}
-                        placeholder="Street address"
-                        className="w-full text-sm text-gray-700 font-medium bg-transparent border-none outline-none p-0 placeholder-gray-400 focus:ring-0"
-                        autoComplete="address-line1"
-                      />
+                      {s.isDetectingLocation ? (
+                        <SkeletonBar width="w-4/5" />
+                      ) : (
+                        <input
+                          id="addressLine1"
+                          type="text"
+                          value={s.addressLine1}
+                          onChange={(e) => s.handleAddressLine1Change(e.target.value)}
+                          placeholder="Street address"
+                          className="w-full text-sm text-gray-700 font-medium bg-transparent border-none outline-none p-0 placeholder-gray-400 focus:ring-0"
+                          autoComplete="address-line1"
+                        />
+                      )}
                     </div>
                     {/* Refresh icon — re-detect GPS */}
                     <button
@@ -374,15 +383,19 @@ export default function OnboardingStep4() {
                       >
                         Address Line 2
                       </label>
-                      <input
-                        id="addressLine2"
-                        type="text"
-                        value={s.addressLine2}
-                        onChange={(e) => s.setAddressLine2(e.target.value)}
-                        placeholder="Apt, suite, bldg (optional)"
-                        className="w-full text-sm text-gray-700 font-medium bg-transparent border-none outline-none p-0 placeholder-gray-400 focus:ring-0"
-                        autoComplete="address-line2"
-                      />
+                      {s.isDetectingLocation ? (
+                        <SkeletonBar width="w-2/3" />
+                      ) : (
+                        <input
+                          id="addressLine2"
+                          type="text"
+                          value={s.addressLine2}
+                          onChange={(e) => s.setAddressLine2(e.target.value)}
+                          placeholder="Apt, suite, bldg (optional)"
+                          className="w-full text-sm text-gray-700 font-medium bg-transparent border-none outline-none p-0 placeholder-gray-400 focus:ring-0"
+                          autoComplete="address-line2"
+                        />
+                      )}
                     </div>
                     {/* Refresh icon — re-detect GPS */}
                     <button
@@ -410,19 +423,26 @@ export default function OnboardingStep4() {
                 <div className="border-b border-gray-200">
                   <div className="flex items-center gap-2">
                     <div className="flex-1 min-w-0">
-                      <SearchableSelect
-                        id="addressCountry"
-                        label="Country"
-                        value={s.dropdowns.country}
-                        options={s.dropdowns.countries.map((c) => ({
-                          value: c.isoCode,
-                          label: c.name,
-                        }))}
-                        onChange={s.dropdowns.setCountry}
-                        placeholder="Search country..."
-                        required
-                        autoComplete="country"
-                      />
+                      {s.isDetectingLocation ? (
+                        <div className="space-y-2 py-2">
+                          <span className="text-sm font-semibold text-slate-900">Country</span>
+                          <div className="h-12 w-full rounded-xl bg-gray-100 animate-pulse" />
+                        </div>
+                      ) : (
+                        <SearchableSelect
+                          id="addressCountry"
+                          label="Country"
+                          value={s.dropdowns.country}
+                          options={s.dropdowns.countries.map((c) => ({
+                            value: c.isoCode,
+                            label: c.name,
+                          }))}
+                          onChange={s.dropdowns.setCountry}
+                          placeholder="Search country..."
+                          required
+                          autoComplete="country"
+                        />
+                      )}
                     </div>
                     {/* Refresh icon — re-detect GPS */}
                     <button
@@ -447,23 +467,30 @@ export default function OnboardingStep4() {
                 <div className="border-b border-gray-200">
                   <div className="flex items-center gap-2">
                     <div className="flex-1 min-w-0">
-                      <SearchableSelect
-                        id="addressState"
-                        label="State / Province"
-                        value={s.dropdowns.state}
-                        options={s.dropdowns.states.map((st) => ({
-                          value: st.isoCode,
-                          label: st.name,
-                        }))}
-                        onChange={s.dropdowns.setState}
-                        placeholder="Search state..."
-                        disabled={!s.dropdowns.country}
-                        loading={s.dropdowns.loadingStates}
-                        loadError={s.dropdowns.statesError}
-                        onRetry={s.dropdowns.retryStates}
-                        required
-                        autoComplete="address-level1"
-                      />
+                      {s.isDetectingLocation ? (
+                        <div className="space-y-2 py-2">
+                          <span className="text-sm font-semibold text-slate-900">State / Province</span>
+                          <div className="h-12 w-full rounded-xl bg-gray-100 animate-pulse" />
+                        </div>
+                      ) : (
+                        <SearchableSelect
+                          id="addressState"
+                          label="State / Province"
+                          value={s.dropdowns.state}
+                          options={s.dropdowns.states.map((st) => ({
+                            value: st.isoCode,
+                            label: st.name,
+                          }))}
+                          onChange={s.dropdowns.setState}
+                          placeholder="Search state..."
+                          disabled={!s.dropdowns.country}
+                          loading={s.dropdowns.loadingStates}
+                          loadError={s.dropdowns.statesError}
+                          onRetry={s.dropdowns.retryStates}
+                          required
+                          autoComplete="address-level1"
+                        />
+                      )}
                     </div>
                     {/* Refresh icon — re-detect GPS */}
                     <button
@@ -502,17 +529,21 @@ export default function OnboardingStep4() {
                       >
                         ZIP / Postal Code
                       </label>
-                      <input
-                        id="zipCode"
-                        type="text"
-                        value={s.zipCode}
-                        inputMode="text"
-                        onChange={(e) => s.handleZipCodeChange(e.target.value)}
-                        placeholder="e.g. 10001"
-                        maxLength={10}
-                        className="w-full text-sm text-gray-700 font-medium bg-transparent border-none outline-none p-0 placeholder-gray-400 focus:ring-0"
-                        autoComplete="postal-code"
-                      />
+                      {s.isDetectingLocation ? (
+                        <SkeletonBar width="w-1/3" />
+                      ) : (
+                        <input
+                          id="zipCode"
+                          type="text"
+                          value={s.zipCode}
+                          inputMode="text"
+                          onChange={(e) => s.handleZipCodeChange(e.target.value)}
+                          placeholder="e.g. 10001"
+                          maxLength={10}
+                          className="w-full text-sm text-gray-700 font-medium bg-transparent border-none outline-none p-0 placeholder-gray-400 focus:ring-0"
+                          autoComplete="postal-code"
+                        />
+                      )}
                     </div>
                     {/* Refresh icon — re-detect GPS */}
                     <button

@@ -79,12 +79,8 @@ export default function ChatPage() {
     }
   }, [messages, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login', { state: { redirectTo: '/hushh-agents/chat' } });
-    }
-  }, [isAuthenticated, isLoading, navigate]);
+  // Auth is optional — users can chat without logging in
+  // Login only needed for cloud sync (future feature)
 
   // Handle send message
   const handleSend = async () => {
@@ -187,8 +183,6 @@ export default function ChatPage() {
     );
   }
 
-  if (!isAuthenticated) return null;
-
   return (
     <div className="bg-white text-gray-900 min-h-screen min-h-[100dvh] antialiased flex flex-col selection:bg-hushh-blue selection:text-white">
       
@@ -223,7 +217,7 @@ export default function ChatPage() {
       {showHistory && (
         <>
           <div className="fixed inset-0 bg-black/30 z-[60]" onClick={() => setShowHistory(false)} />
-          <div className="fixed right-0 top-0 bottom-0 w-80 md:w-96 bg-white border-l border-gray-200 z-[70] flex flex-col shadow-2xl">
+          <div className="fixed right-0 top-0 bottom-0 w-[min(85vw,20rem)] md:w-96 bg-white border-l border-gray-200 z-[70] flex flex-col shadow-2xl">
             <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
               <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <span className="material-symbols-outlined text-base text-gray-500">history</span>

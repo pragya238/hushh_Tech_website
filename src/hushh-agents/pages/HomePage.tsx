@@ -1,347 +1,817 @@
 /**
- * Hushh Agents — Home Page
- * 
- * Follows KYC onboarding UI patterns with Apple primary bright colors.
- * HushhTechHeader, max-w-md centered layout, Playfair headings.
+ * Hushh Agents — Landing Page (Saturn-inspired)
+ *
+ * Clean, editorial layout with dashed corner borders,
+ * serif headings, feature sections, CEO testimonial,
+ * enterprise security badges, and KPI stats.
+ * Fully public — no auth gate.
  */
-import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import HushhTechCta, { HushhTechCtaVariant } from '../../components/hushh-tech-cta/HushhTechCta';
-import { useAuth } from '../hooks/useAuth';
-import HushhLogo from '../../components/images/Hushhogo.png';
+import { useNavigate, Link } from 'react-router-dom';
+import HushhLogo from '../assets/Hushhogo.png';
 
-const playfair = { fontFamily: "'Playfair Display', serif" };
+/* ── Fonts ── */
+const serif = { fontFamily: "'Playfair Display', serif" };
+const sans = { fontFamily: "'Inter', sans-serif" };
 
-/* Apple system colors */
-const APPLE = {
-  blue: '#007AFF',
-  green: '#34C759',
-  orange: '#FF9500',
-  red: '#FF3B30',
-  purple: '#AF52DE',
-  teal: '#5AC8FA',
-  indigo: '#5856D6',
-  pink: '#FF2D55',
+/* ── Colors ── */
+const C = {
+  primary: '#1A1A1B',
+  accent: '#1400FF',
+  textSub: '#8A8A8A',
+  divider: '#E5E5E5',
+  bg: '#FFFFFF',
+  bgLight: '#F5F5F5',
 };
 
-/** Agent card — clean bordered card matching KYC style */
-const AgentNudge = ({
-  title,
-  subtitle,
-  description,
-  icon,
-  color,
-  badge,
-  badgeColor,
-  chips,
-  onClick,
+/* ═══════════════════════════════════════
+   Dashed Corner Section Wrapper
+   Saturn-style crop mark borders
+   ═══════════════════════════════════════ */
+const DashedSection = ({
+  children,
+  className = '',
+  id,
 }: {
-  title: string;
-  subtitle: string;
-  description: string;
-  icon: string;
-  color: string;
-  badge: string;
-  badgeColor: string;
-  chips: string[];
-  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+  id?: string;
 }) => (
-  <button
-    onClick={onClick}
-    className="text-left w-full border border-gray-200/60 rounded-2xl p-5 transition-all active:scale-[0.98] hover:border-gray-300 bg-white"
-    aria-label={title}
+  <section
+    id={id}
+    className={`relative mx-4 sm:mx-6 md:mx-8 my-2 ${className}`}
+    style={{
+      borderLeft: `1px solid ${C.divider}`,
+      borderRight: `1px solid ${C.divider}`,
+      borderTop: `1px solid ${C.divider}`,
+      borderBottom: `1px solid ${C.divider}`,
+      clipPath:
+        'polygon(0 0, 20px 0, 20px 0, 20px 0, calc(100% - 20px) 0, 100% 0, 100% 20px, 100% 20px, 100% calc(100% - 20px), 100% 100%, calc(100% - 20px) 100%, 20px 100%, 0 100%, 0 calc(100% - 20px), 0 20px)',
+    }}
   >
-    <div className="flex items-start gap-3.5">
-      {/* Icon */}
-      <div
-        className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-        style={{ backgroundColor: `${color}12` }}
-      >
-        <span className="material-symbols-outlined text-[24px]" style={{ color }}>
-          {icon}
-        </span>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-[0.15em] font-medium">
-              {subtitle}
-            </p>
-            <h3 className="text-[15px] font-semibold text-gray-900 leading-tight" style={playfair}>
-              {title}
-            </h3>
-          </div>
-          <span
-            className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider shrink-0"
-            style={{
-              backgroundColor: `${badgeColor}15`,
-              color: badgeColor,
-            }}
-          >
-            {badge}
-          </span>
-        </div>
-
-        <p className="text-[12px] text-gray-500 font-light leading-relaxed mt-1.5">
-          {description}
-        </p>
-
-        {/* Chips */}
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          {chips.map((chip) => (
-            <span
-              key={chip}
-              className="px-2.5 py-1 bg-gray-50 border border-gray-100 rounded-full text-[10px] font-medium text-gray-500"
-            >
-              {chip}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Chevron */}
-      <span className="material-symbols-outlined text-gray-300 text-[18px] shrink-0 mt-1">
-        chevron_right
-      </span>
-    </div>
-  </button>
+    {/* Top-left corner */}
+    <div
+      className="absolute top-0 left-0 w-5 h-5 pointer-events-none"
+      style={{
+        borderTop: `1px solid ${C.primary}`,
+        borderLeft: `1px solid ${C.primary}`,
+      }}
+    />
+    {/* Top-right corner */}
+    <div
+      className="absolute top-0 right-0 w-5 h-5 pointer-events-none"
+      style={{
+        borderTop: `1px solid ${C.primary}`,
+        borderRight: `1px solid ${C.primary}`,
+      }}
+    />
+    {/* Bottom-left corner */}
+    <div
+      className="absolute bottom-0 left-0 w-5 h-5 pointer-events-none"
+      style={{
+        borderBottom: `1px solid ${C.primary}`,
+        borderLeft: `1px solid ${C.primary}`,
+      }}
+    />
+    {/* Bottom-right corner */}
+    <div
+      className="absolute bottom-0 right-0 w-5 h-5 pointer-events-none"
+      style={{
+        borderBottom: `1px solid ${C.primary}`,
+        borderRight: `1px solid ${C.primary}`,
+      }}
+    />
+    {children}
+  </section>
 );
 
-export default function AgentsHomePage() {
+/* ═══════════════════════════════════════
+   Feature Section Component
+   Visual card + label + heading + desc
+   ═══════════════════════════════════════ */
+const FeatureSection = ({
+  label,
+  heading,
+  description,
+  description2,
+  linkText,
+  linkTo,
+  mockupIcon,
+  mockupItems,
+}: {
+  label: string;
+  heading: string;
+  description: string;
+  description2?: string;
+  linkText: string;
+  linkTo: string;
+  mockupIcon: string;
+  mockupItems?: string[];
+}) => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading, user, signOut } = useAuth();
-  const [mounted, setMounted] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
 
-  useEffect(() => { setMounted(true); }, []);
-
+  /* Auto-cycle through items every 2s — Saturn video-like effect */
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login', { state: { redirectTo: '/hushh-agents' } });
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  if (isLoading || !mounted) {
-    return (
-      <div className="bg-white text-gray-900 min-h-screen antialiased flex flex-col items-center justify-center">
-        <div className="w-14 h-14 rounded-2xl bg-gray-100 animate-pulse mb-3" />
-        <p className="text-[13px] text-gray-400 font-light">Loading...</p>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) return null;
+    if (!mockupItems || mockupItems.length === 0) return;
+    const timer = setInterval(() => {
+      setActiveIdx((prev) => (prev + 1) % mockupItems.length);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [mockupItems]);
 
   return (
-    <div className="bg-white text-gray-900 min-h-screen antialiased flex flex-col selection:bg-blue-500 selection:text-white">
-
-      {/* ═══ Header — matches KYC sticky header ═══ */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-gray-100">
-        <Link to="/hushh-agents" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center">
-            <img src={HushhLogo} alt="Hushh" className="w-6 h-6 object-contain" />
-          </div>
-          <div>
-            <span className="text-[13px] font-semibold text-gray-900 block leading-tight">Hushh Agents</span>
-            <span className="text-[9px] uppercase tracking-[0.2em] font-medium" style={{ color: APPLE.blue }}>
-              AI Platform
-            </span>
-          </div>
-        </Link>
-
-        <div className="flex items-center gap-3">
-          {user?.name && (
-            <span className="text-[11px] text-gray-400 hidden md:block font-light">
-              {user.name.split(' ')[0]}
-            </span>
-          )}
-          <button
-            onClick={signOut}
-            className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors"
-            aria-label="Sign Out"
+    <DashedSection>
+      {/* Visual Card — premium product mockup */}
+      <div
+        className="w-full py-8 sm:py-12 md:py-16 flex items-center justify-center relative overflow-hidden"
+        style={{ background: `linear-gradient(180deg, ${C.bgLight} 0%, #EBEBEB 100%)` }}
+      >
+        {mockupItems ? (
+          <div
+            className="w-[88%] max-w-[280px] sm:max-w-[320px] rounded-2xl overflow-hidden"
+            style={{
+              background: 'rgba(255,255,255,0.85)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+              border: '1px solid rgba(255,255,255,0.6)',
+              animation: 'float-card 6s ease-in-out infinite',
+            }}
           >
-            <span className="material-symbols-outlined text-[18px] text-gray-400">logout</span>
+            {/* Mini app header bar */}
+            <div className="flex items-center gap-1.5 px-4 py-2.5" style={{ borderBottom: '1px solid #F0F0F0' }}>
+              <div className="w-2 h-2 rounded-full bg-[#FF5F57]" />
+              <div className="w-2 h-2 rounded-full bg-[#FFBD2E]" />
+              <div className="w-2 h-2 rounded-full bg-[#28C840]" />
+              <span className="ml-auto text-[9px] font-medium tracking-wider uppercase" style={{ color: '#BBB' }}>
+                hushh agents
+              </span>
+            </div>
+
+            {/* Items list */}
+            <div className="p-3 sm:p-4 flex flex-col gap-1.5 sm:gap-2">
+              {mockupItems.map((item, i) => {
+                const isActive = i === activeIdx;
+                return (
+                  <div
+                    key={item}
+                    className="flex items-center gap-2.5 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-lg transition-all duration-600"
+                    style={{
+                      background: isActive ? `linear-gradient(90deg, rgba(20,0,255,0.06) 0%, rgba(20,0,255,0.02) 100%)` : 'transparent',
+                      borderLeft: isActive ? `3px solid ${C.accent}` : '3px solid transparent',
+                      transform: isActive ? 'translateX(2px)' : 'translateX(0)',
+                      transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
+                  >
+                    {/* Check/radio icon */}
+                    <div
+                      className="w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-400"
+                      style={{
+                        width: 18, height: 18,
+                        background: isActive ? C.accent : 'transparent',
+                        border: isActive ? 'none' : '1.5px solid #D0D0D0',
+                      }}
+                    >
+                      {isActive && (
+                        <span className="text-white text-[10px] font-bold">✓</span>
+                      )}
+                    </div>
+                    <span
+                      className="text-[12px] sm:text-[13px] transition-all duration-400"
+                      style={{
+                        color: isActive ? C.primary : '#B0B0B0',
+                        fontWeight: isActive ? 600 : 400,
+                        letterSpacing: isActive ? '0.01em' : '0',
+                      }}
+                    >
+                      {item}
+                    </span>
+                    {/* Animated arrow for active */}
+                    <span
+                      className="ml-auto transition-all duration-400"
+                      style={{
+                        opacity: isActive ? 0.6 : 0,
+                        transform: isActive ? 'translateX(0)' : 'translateX(-8px)',
+                        fontSize: 12,
+                        color: C.accent,
+                      }}
+                    >
+                      →
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom progress indicator */}
+            <div className="px-4 pb-3">
+              <div className="flex gap-1.5">
+                {mockupItems.map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-[3px] rounded-full flex-1 transition-all duration-500"
+                    style={{
+                      background: i <= activeIdx ? C.accent : '#E8E8E8',
+                      opacity: i === activeIdx ? 1 : i < activeIdx ? 0.4 : 0.2,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="relative">
+            {/* Concentric circles with pulse */}
+            <div
+              className="w-64 h-64 sm:w-72 sm:h-72 rounded-full border border-dashed flex items-center justify-center"
+              style={{ borderColor: '#D0D0D0', animation: 'pulse-ring 3s ease-in-out infinite' }}
+            >
+              <div
+                className="w-44 h-44 sm:w-52 sm:h-52 rounded-full border flex items-center justify-center"
+                style={{ borderColor: '#D8D8D8' }}
+              >
+                <div
+                  className="w-28 h-28 sm:w-36 sm:h-36 rounded-full flex items-center justify-center"
+                  style={{ background: C.accent }}
+                >
+                  <span className="material-symbols-outlined text-white text-4xl sm:text-5xl">
+                    {mockupIcon}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Text Content */}
+      <div className="px-5 sm:px-8 py-8 sm:py-10">
+        <p
+          className="text-[11px] tracking-[0.25em] uppercase mb-3 font-medium"
+          style={{ color: C.textSub, ...sans }}
+        >
+          {label}
+        </p>
+        <h3
+          className="text-2xl sm:text-3xl mb-4 font-normal"
+          style={{ ...serif, color: C.primary }}
+        >
+          {heading}
+        </h3>
+        <p
+          className="text-sm leading-relaxed mb-3 font-light"
+          style={{ color: C.textSub, ...sans }}
+        >
+          {description}
+        </p>
+        {description2 && (
+          <p
+            className="text-sm leading-relaxed mb-3 font-light"
+            style={{ color: C.textSub, ...sans }}
+          >
+            {description2}
+          </p>
+        )}
+        <button
+          onClick={() => navigate(linkTo)}
+          className="text-sm font-semibold mt-2 hover:opacity-70 transition-opacity"
+          style={{ color: C.accent, ...sans }}
+        >
+          {linkText}
+        </button>
+      </div>
+    </DashedSection>
+  );
+};
+
+/* ═══════════════════════════════════════
+   KPI Stat Block
+   ═══════════════════════════════════════ */
+const KpiBlock = ({ value, label }: { value: string; label: string }) => (
+  <DashedSection>
+    <div className="px-5 sm:px-8 py-16 sm:py-20">
+      <h3
+        className="text-5xl sm:text-6xl mb-6 font-normal"
+        style={{ ...serif, color: C.primary }}
+      >
+        {value}
+      </h3>
+      <p
+        className="text-sm leading-relaxed font-light max-w-md"
+        style={{ color: C.textSub, ...sans }}
+      >
+        {label}
+      </p>
+    </div>
+  </DashedSection>
+);
+
+/* ═══════════════════════════════════════
+   Main Page Component
+   ═══════════════════════════════════════ */
+export default function AgentsHomePage() {
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  return (
+    <div
+      className="min-h-screen selection:bg-blue-100"
+      style={{ background: C.bg, color: C.primary, ...sans }}
+    >
+      {/* ═══ Header ═══ */}
+      <DashedSection>
+        <header className="px-5 sm:px-8 py-4 sm:py-5 flex items-center justify-between">
+          <Link to="/hushh-agents" className="flex items-center gap-3">
+            <img
+              src={HushhLogo}
+              alt="Hushh"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
+            />
+            <span
+              className="text-lg sm:text-xl tracking-wide font-normal"
+              style={{ ...serif, color: C.primary }}
+            >
+              HUSHH AGENTS
+            </span>
+          </Link>
+          <button
+            onClick={() => setIsMenuOpen(true)}
+            className="w-10 h-10 flex items-center justify-center"
+            aria-label="Open menu"
+          >
+            <div className="flex flex-col gap-[5px]">
+              <span className="w-6 h-[1.5px]" style={{ background: C.primary }} />
+              <span className="w-6 h-[1.5px]" style={{ background: C.primary }} />
+            </div>
+          </button>
+        </header>
+      </DashedSection>
+
+      {/* ═══ Mobile Nav Drawer ═══ */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col" style={sans}>
+          {/* Drawer Header */}
+          <DashedSection>
+            <div className="px-5 sm:px-8 py-4 sm:py-5 flex items-center justify-between">
+              <Link to="/hushh-agents" className="flex items-center gap-3">
+                <img src={HushhLogo} alt="Hushh" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
+                <span className="text-lg sm:text-xl tracking-wide font-normal" style={{ ...serif, color: C.primary }}>
+                  HUSHH AGENTS
+                </span>
+              </Link>
+              <button
+                onClick={() => setIsMenuOpen(false)}
+                className="w-10 h-10 flex items-center justify-center"
+                aria-label="Close menu"
+              >
+                <span className="material-symbols-outlined text-2xl" style={{ color: C.textSub }}>close</span>
+              </button>
+            </div>
+          </DashedSection>
+
+          {/* Nav Links — Home + 3 Agent types */}
+          <div className="flex-1 flex flex-col items-center justify-center gap-10">
+            {[
+              { label: 'Home', to: '/hushh-agents' },
+              { label: 'Chat', to: '/hushh-agents/chat' },
+              { label: 'Voice', to: '/hushh-agents/voice' },
+              { label: 'Code', to: '/hushh-agents/code' },
+            ].map((item) => (
+              <button
+                key={item.label}
+                onClick={() => { setIsMenuOpen(false); navigate(item.to); }}
+                className="text-base tracking-wide hover:opacity-60 transition-opacity"
+                style={{ color: C.textSub }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Drawer Buttons */}
+          <div className="px-6 pb-10 space-y-3">
+            <button
+              onClick={() => { setIsMenuOpen(false); navigate('/hushh-agents/login'); }}
+              className="w-full py-4 text-center text-sm font-medium tracking-wide"
+              style={{ background: C.bgLight, color: C.primary }}
+            >
+              Login
+            </button>
+            <button
+              onClick={() => { setIsMenuOpen(false); navigate('/hushh-agents/kirkland'); }}
+              className="w-full py-4 text-center text-sm font-medium tracking-wide text-white"
+              style={{ background: C.accent }}
+            >
+              Get started
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Hero ═══ */}
+      <DashedSection>
+        <div className="px-5 sm:px-8 py-20 sm:py-28 md:py-32 text-center">
+          <h1
+            className="text-4xl sm:text-5xl md:text-6xl font-normal leading-tight mb-6"
+            style={{ ...serif, color: C.primary }}
+          >
+            Unlock your
+            <br />
+            <span className="italic" style={{ color: C.textSub }}>
+              advisory potential
+            </span>
+          </h1>
+          <p
+            className="text-sm sm:text-base leading-relaxed font-light max-w-lg mx-auto mb-10"
+            style={{ color: C.textSub, ...sans }}
+          >
+            AI-powered agents for Registered Investment Advisors and financial
+            professionals. Discover local advisors, automate workflows, and
+            deliver excellence at scale.
+          </p>
+          <button
+            onClick={() => navigate('/hushh-agents/kirkland')}
+            className="inline-flex items-center gap-2 px-8 py-4 text-sm font-medium text-white tracking-wide transition-opacity hover:opacity-90"
+            style={{ background: C.accent }}
+          >
+            Get started
+            <span className="text-lg">→</span>
           </button>
         </div>
-      </header>
+      </DashedSection>
 
-      {/* ═══ Main Content ═══ */}
-      <main className="px-4 sm:px-6 flex-grow max-w-md md:max-w-2xl lg:max-w-4xl mx-auto w-full pb-32 md:pb-16">
-
-        {/* ── Hero ── */}
-        <section className="pt-6 sm:pt-8 pb-6">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-2 font-medium">
-            Your AI Companions
-          </p>
-          <h1
-            className="text-[2rem] leading-[1.1] font-normal text-black tracking-tight font-serif"
-            style={playfair}
+      {/* ═══ Trusted By — Scrolling Marquee ═══ */}
+      <DashedSection>
+        <div className="py-14 sm:py-20 overflow-hidden" style={{ background: C.bgLight }}>
+          {/* Marquee with fade edges */}
+          <div
+            className="relative mb-10"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+              maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+            }}
           >
-            Meet Your <br />
-            <span className="text-gray-400 italic font-light">Agents.</span>
-          </h1>
-          <p className="text-gray-500 text-[13px] font-light mt-3 leading-relaxed">
-            Intelligent assistants powered by GCP AI. Chat in English, Hindi, or Tamil.
-          </p>
-        </section>
-
-        {/* ── Primary Agents ── */}
-        <section className="pb-6">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-3 font-medium">
-            Available Agents
-          </p>
-          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
-            {/* Kirkland Agents Directory — Priority */}
-            <AgentNudge
-              title="Kirkland Agents"
-              subtitle="Local Directory · 771 Agents"
-              description="Browse and discover local agents. Search by name, category, or location. View ratings and get directions."
-              icon="location_city"
-              color={APPLE.indigo}
-              badge="Live"
-              badgeColor={APPLE.blue}
-              chips={['Search', 'Filter', 'Ratings', 'Directions']}
-              onClick={() => navigate('/hushh-agents/kirkland')}
-            />
-
-            {/* Hushh Chat Agent */}
-            <AgentNudge
-              title="Hushh"
-              subtitle="Primary Agent"
-              description="Your intelligent AI companion. Ask questions, get analysis, creative writing, coding help, and more."
-              icon="smart_toy"
-              color={APPLE.blue}
-              badge="Online"
-              badgeColor={APPLE.green}
-              chips={['Multi-language', 'Voice', 'Code', 'Analysis']}
-              onClick={() => navigate('/hushh-agents/chat')}
-            />
-
-            {/* Tamil Voice Agent */}
-            <AgentNudge
-              title="தமிழ் குரல்"
-              subtitle="Voice Agent · Gemini Live"
-              description="Speak in Tamil, get responses in Tamil. Real-time voice conversations powered by Google's most advanced AI."
-              icon="record_voice_over"
-              color={APPLE.orange}
-              badge="New"
-              badgeColor={APPLE.orange}
-              chips={['Real-time', 'Native Tamil', 'Low Latency', 'No Typing']}
-              onClick={() => navigate('/hushh-agents/voice?lang=ta-IN')}
-            />
-
-            {/* Code Agent */}
-            <AgentNudge
-              title="Hushh Code"
-              subtitle="Code Agent · Extended Thinking"
-              description="AI-powered code generation, debugging, explanation, and optimization with step-by-step reasoning."
-              icon="terminal"
-              color={APPLE.purple}
-              badge="Online"
-              badgeColor={APPLE.green}
-              chips={['Generate', 'Debug', 'Explain', 'TS · PY · GO']}
-              onClick={() => navigate('/hushh-agents/code')}
-            />
-          </div>
-        </section>
-
-        {/* ── Capabilities Grid ── */}
-        <section className="pb-6">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-3 font-medium">
-            Capabilities
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { icon: 'chat', label: 'Chat', desc: 'Natural conversations', color: APPLE.blue },
-              { icon: 'translate', label: 'Languages', desc: 'EN · HI · TA', color: APPLE.green },
-              { icon: 'mic', label: 'Voice', desc: 'Speak naturally', color: APPLE.orange },
-              { icon: 'code', label: 'Code', desc: 'Programming help', color: APPLE.purple },
-            ].map((item) => (
-              <div
-                key={item.icon}
-                className="border border-gray-200/60 rounded-2xl p-4 bg-white"
-              >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center mb-2.5"
-                  style={{ backgroundColor: `${item.color}12` }}
-                >
-                  <span className="material-symbols-outlined text-[18px]" style={{ color: item.color }}>
-                    {item.icon}
+            <div
+              className="flex items-center whitespace-nowrap"
+              style={{
+                animation: 'marquee-scroll 30s linear infinite',
+                width: 'max-content',
+              }}
+            >
+              {[1, 2].map((set) => (
+                <div key={set} className="flex items-center" style={{ gap: '4.5rem' }}>
+                  {/* rockwealth */}
+                  <span
+                    className="text-2xl sm:text-3xl md:text-4xl tracking-tight"
+                    style={{ color: C.primary, opacity: 0.35, fontFamily: "'Inter', sans-serif", fontWeight: 700 }}
+                  >
+                    rock<span style={{ fontWeight: 300 }}>wealth</span>
                   </span>
+
+                  {/* Paradigm Norton | for life */}
+                  <span
+                    className="text-2xl sm:text-3xl md:text-4xl flex items-center"
+                    style={{ color: C.primary, opacity: 0.35 }}
+                  >
+                    <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600 }}>Paradigm</span>
+                    <span className="inline-block w-px mx-3" style={{ height: '1.8em', background: '#AAAAAA' }} />
+                    <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 300, fontStyle: 'italic' }}>for life</span>
+                  </span>
+
+                  {/* COOPER PARRY */}
+                  <span
+                    className="text-2xl sm:text-3xl md:text-4xl uppercase"
+                    style={{ color: C.primary, opacity: 0.35, fontFamily: "'Inter', sans-serif", fontWeight: 900, letterSpacing: '0.12em' }}
+                  >
+                    Cooper Parry
+                  </span>
+
+                  {/* hushh.ai */}
+                  <span
+                    className="text-2xl sm:text-3xl md:text-4xl tracking-tight"
+                    style={{ color: C.primary, opacity: 0.35, fontFamily: "'Inter', sans-serif", fontWeight: 800 }}
+                  >
+                    hushh<span style={{ fontWeight: 300 }}>.ai</span>
+                  </span>
+
+                  {/* Kirkland Advisors */}
+                  <span
+                    className="text-2xl sm:text-3xl md:text-4xl"
+                    style={{ color: C.primary, opacity: 0.35, fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
+                  >
+                    Kirkland <span style={{ fontWeight: 300, fontStyle: 'italic' }}>Advisors</span>
+                  </span>
+
+                  {/* Google Cloud */}
+                  <span
+                    className="text-2xl sm:text-3xl md:text-4xl"
+                    style={{ color: C.primary, opacity: 0.35, fontFamily: "'Inter', sans-serif", fontWeight: 500, letterSpacing: '0.02em' }}
+                  >
+                    Google Cloud
+                  </span>
+
+                  {/* spacer between sets */}
+                  <span className="inline-block" style={{ width: '4.5rem' }} />
                 </div>
-                <h5 className="text-[13px] font-medium text-gray-900">{item.label}</h5>
-                <p className="text-[10px] text-gray-400 font-light mt-0.5">{item.desc}</p>
+              ))}
+            </div>
+          </div>
+
+          <p
+            className="text-sm text-center font-light tracking-wide px-5"
+            style={{ color: C.textSub, fontFamily: "'Inter', sans-serif" }}
+          >
+            Trusted by over 500+ leading advice firms
+          </p>
+        </div>
+      </DashedSection>
+
+      {/* Animation keyframes */}
+      <style>{`
+        @keyframes marquee-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes pulse-ring {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.03); }
+        }
+        @keyframes float-card {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+      `}</style>
+
+      {/* ═══ Feature 1: Kirkland R.I.A. Agents (PRIMARY) ═══ */}
+      <FeatureSection
+        label="R.I.A. AGENT NETWORK"
+        heading="Discover advisors near you"
+        description="Browse and connect with Registered Investment Advisors in Kirkland and beyond. Search by name, specialty, or location to find the right financial expertise."
+        description2="Unify everything into a single source of truth through deep integrations with your advisory ecosystem and back-office platforms."
+        linkText="Learn more"
+        linkTo="/hushh-agents/kirkland"
+        mockupIcon="domain"
+        mockupItems={['R.I.A. Advisors', 'Fund Research', 'Compliance Reports', 'Client Matching']}
+      />
+
+      {/* ═══ Feature 2: AI Chat ═══ */}
+      <FeatureSection
+        label="INTELLIGENT CONVERSATIONS"
+        heading="Converse naturally in any language"
+        description="Your AI companion that understands context, nuance, and multiple languages. Ask questions, get analysis, creative writing, and more."
+        description2="Create a seamless conversational experience where your AI operates in perfect harmony, scaling effortlessly with your needs."
+        linkText="Learn more"
+        linkTo="/hushh-agents/chat"
+        mockupIcon="chat"
+        mockupItems={['Natural Language', 'Multi-turn Context', 'Creative Writing', 'Code Analysis']}
+      />
+
+      {/* ═══ Feature 3: Voice Agent ═══ */}
+      <FeatureSection
+        label="VOICE INTELLIGENCE"
+        heading="Speak naturally, get instant responses"
+        description="Real-time voice conversations powered by advanced AI. Speak in Tamil, Hindi, or English and get native responses instantly."
+        description2="Reinvent communication from text-only to voice-first with intelligent speech recognition across every interaction."
+        linkText="Learn more"
+        linkTo="/hushh-agents/voice"
+        mockupIcon="record_voice_over"
+      />
+
+      {/* ═══ Feature 4: Code Generation ═══ */}
+      <FeatureSection
+        label="CODE ASSISTANT"
+        heading="Generate, debug and optimize code"
+        description="AI-powered code generation, debugging, explanation, and optimization with step-by-step reasoning."
+        description2="From suitability analysis to code reviews, release your team from manual debugging to focus exclusively on value delivery."
+        linkText="Learn more"
+        linkTo="/hushh-agents/code"
+        mockupIcon="code"
+      />
+
+      {/* ═══ CEO Section ═══ */}
+      <DashedSection>
+        <div className="px-5 sm:px-8 pt-6 sm:pt-8">
+          {/* CEO Image */}
+          <div
+            className="w-full aspect-[4/3] sm:aspect-[16/10] rounded-sm overflow-hidden mb-8 flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #1a1a1b 0%, #333 100%)' }}
+          >
+            <div className="text-center">
+              <div
+                className="w-32 h-32 sm:w-40 sm:h-40 rounded-full mx-auto mb-4 flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.1)' }}
+              >
+                <span className="text-5xl sm:text-6xl" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  MS
+                </span>
               </div>
+              <span
+                className="text-xs uppercase tracking-[0.2em] font-medium"
+                style={{ color: 'rgba(255,255,255,0.4)' }}
+              >
+                hushh technologies
+              </span>
+            </div>
+            {/* Next Arrow */}
+            <button
+              className="absolute right-8 sm:right-10 bottom-[calc(50%+20px)] w-10 h-10 rounded flex items-center justify-center"
+              style={{ background: C.primary }}
+              aria-label="Next testimonial"
+            >
+              <span className="material-symbols-outlined text-white text-lg">chevron_right</span>
+            </button>
+          </div>
+
+          {/* Quote */}
+          <p
+            className="text-sm sm:text-base leading-relaxed font-light mb-8"
+            style={{ color: C.textSub, ...sans }}
+          >
+            We're redefining the data landscape. Our mission: empower users by making their
+            data universally accessible and valuable, all while placing paramount importance
+            on privacy and user control. Hushh Agents lets us focus on delivering that for
+            our users.
+          </p>
+
+          {/* Dashed Divider */}
+          <div
+            className="border-b border-dashed mb-6"
+            style={{ borderColor: C.divider }}
+          />
+
+          {/* CEO Info */}
+          <div className="pb-8">
+            <h4 className="text-base font-bold mb-1" style={{ color: C.primary, ...sans }}>
+              Manish Sainani
+            </h4>
+            <p className="text-sm font-light" style={{ color: C.textSub, ...sans }}>
+              CEO
+            </p>
+            <p className="text-sm font-light" style={{ color: C.textSub, ...sans }}>
+              Hushh Technologies
+            </p>
+          </div>
+        </div>
+      </DashedSection>
+
+      {/* ═══ Enterprise Security ═══ */}
+      <DashedSection>
+        <div className="px-5 sm:px-8 py-10 sm:py-14">
+          <h3
+            className="text-2xl sm:text-3xl mb-5 font-normal"
+            style={{ ...serif, color: C.primary }}
+          >
+            Enterprise security as standard
+          </h3>
+          <div className="space-y-1 mb-4">
+            <p className="text-sm font-light" style={{ color: C.textSub, ...sans }}>
+              Privacy. Security. Peace of mind.
+            </p>
+            <p className="text-sm font-light" style={{ color: C.textSub, ...sans }}>
+              Never used for training.
+            </p>
+            <p className="text-sm font-light" style={{ color: C.textSub, ...sans }}>
+              Round the clock enterprise security.
+            </p>
+          </div>
+          <button
+            className="text-sm font-semibold mt-2 mb-8 hover:opacity-70 transition-opacity"
+            style={{ color: C.accent, ...sans }}
+          >
+            Learn more
+          </button>
+
+          {/* Security Badges */}
+          <div className="flex items-center gap-6 sm:gap-10">
+            {/* SOC 2 */}
+            <div
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border flex flex-col items-center justify-center"
+              style={{ borderColor: C.divider }}
+            >
+              <span className="text-[11px] font-bold" style={{ color: C.primary }}>
+                AICPA
+              </span>
+              <span className="text-[10px] font-light" style={{ color: C.textSub }}>
+                SOC 2
+              </span>
+            </div>
+            {/* GDPR */}
+            <div
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border flex flex-col items-center justify-center"
+              style={{ borderColor: C.divider }}
+            >
+              <div className="flex items-center gap-0.5 mb-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-[8px]" style={{ color: C.textSub }}>
+                    ★
+                  </span>
+                ))}
+              </div>
+              <span className="text-[11px] font-bold" style={{ color: C.primary }}>
+                GDPR
+              </span>
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-[8px]" style={{ color: C.textSub }}>
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
+            {/* Cyber Essentials */}
+            <div
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border flex flex-col items-center justify-center"
+              style={{ borderColor: C.divider }}
+            >
+              <span className="material-symbols-outlined text-sm mb-0.5" style={{ color: C.textSub }}>
+                check
+              </span>
+              <span className="text-[10px] font-medium text-center leading-tight" style={{ color: C.primary }}>
+                Cyber
+              </span>
+              <span className="text-[9px] font-light" style={{ color: C.textSub }}>
+                Essentials
+              </span>
+            </div>
+          </div>
+        </div>
+      </DashedSection>
+
+      {/* ═══ KPI Stats ═══ */}
+      <KpiBlock
+        value="500+"
+        label="Leading enterprises use Hushh Agents to automate workflows, generate insights and enhance productivity"
+      />
+      <KpiBlock
+        value="3,000+"
+        label="AI-powered conversations processed daily across multiple languages and modalities"
+      />
+      <KpiBlock
+        value="99.9%"
+        label="Uptime SLA backed by Google Cloud infrastructure with enterprise-grade reliability"
+      />
+
+      {/* ═══ CTA Footer ═══ */}
+      <div className="mx-4 sm:mx-6 md:mx-8 my-8">
+        <div
+          className="rounded-sm px-6 sm:px-10 py-14 sm:py-20"
+          style={{ background: C.primary }}
+        >
+          <h3
+            className="text-3xl sm:text-4xl text-white mb-8 font-normal"
+            style={serif}
+          >
+            Unlock your AI agents
+          </h3>
+          <button
+            onClick={() => navigate('/hushh-agents/kirkland')}
+            className="inline-flex items-center gap-2 px-7 py-4 text-sm font-medium tracking-wide text-white transition-opacity hover:opacity-80"
+            style={{ background: 'rgba(255,255,255,0.15)' }}
+          >
+            Get started
+            <span className="text-lg">→</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ═══ Footer ═══ */}
+      <DashedSection>
+        <footer className="px-5 sm:px-8 py-10 sm:py-14">
+          <p className="text-sm mb-6" style={{ color: C.textSub, ...sans }}>
+            contact@hushh.ai
+          </p>
+          <div className="space-y-4 mb-8">
+            {['Careers', 'Journal', 'Security', 'Agents', 'About Us'].map((link) => (
+              <p key={link}>
+                <span
+                  className="text-sm cursor-pointer hover:opacity-60 transition-opacity"
+                  style={{ color: C.primary, ...sans }}
+                >
+                  {link}
+                </span>
+              </p>
             ))}
           </div>
-        </section>
-
-        {/* ── Coming Soon ── */}
-        <section className="pb-6">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-3 font-medium">
-            Coming Soon
-          </p>
-          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
-            {[
-              { name: 'Kai', desc: 'Investment analysis & market insights', icon: 'trending_up', color: APPLE.teal },
-              { name: 'Luna', desc: 'Document processing & summaries', icon: 'description', color: APPLE.pink },
-            ].map((agent) => (
-              <div
-                key={agent.name}
-                className="border border-gray-200/60 rounded-2xl p-4 flex items-center gap-3.5 opacity-50"
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: `${agent.color}12` }}
-                >
-                  <span className="material-symbols-outlined text-[18px]" style={{ color: agent.color }}>
-                    {agent.icon}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h5 className="text-[13px] font-medium text-gray-900 flex items-center gap-2">
-                    {agent.name}
-                    <span className="text-[8px] uppercase tracking-wider bg-gray-100 px-2 py-0.5 rounded-full text-gray-400 font-bold">
-                      Soon
-                    </span>
-                  </h5>
-                  <p className="text-[11px] text-gray-400 font-light mt-0.5">{agent.desc}</p>
-                </div>
-              </div>
-            ))}
+          <div className="border-t pt-6" style={{ borderColor: C.divider }}>
+            <div className="flex items-center gap-4 flex-wrap text-sm mb-3">
+              <Link to="/privacy-policy" className="hover:opacity-60" style={{ color: C.primary }}>
+                Privacy Policy
+              </Link>
+              <span style={{ color: C.divider }}>•</span>
+              <span style={{ color: C.primary }}>Terms of Service</span>
+            </div>
+            <p className="text-xs font-light" style={{ color: C.textSub }}>
+              Hushh Technologies LLC, Kirkland, Washington
+            </p>
+            <p className="text-xs font-light mt-1" style={{ color: C.textSub }}>
+              © {new Date().getFullYear()}, All rights reserved.
+            </p>
           </div>
-        </section>
+        </footer>
+      </DashedSection>
 
-        {/* ── Primary CTA ── */}
-        <section className="pb-8">
-          <HushhTechCta
-            onClick={() => navigate('/hushh-agents/chat')}
-            variant={HushhTechCtaVariant.BLACK}
-          >
-            <span className="material-symbols-outlined text-[18px]">chat</span>
-            Start Chatting with Hushh
-          </HushhTechCta>
-        </section>
-
-        {/* ── Trust Footer ── */}
-        <section className="pb-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-[14px]" style={{ color: APPLE.blue }}>
-              lock
-            </span>
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
-              Secure · Private · No Data Stored
-            </span>
-          </div>
-          <p className="text-[10px] text-gray-300 font-light">
-            Powered by Hushh Intelligence & Google Cloud AI
-          </p>
-          <p className="text-[9px] text-gray-300 mt-1">
-            © {new Date().getFullYear()} Hushh Technologies
-          </p>
-        </section>
-      </main>
+      {/* Bottom spacing */}
+      <div className="h-8" />
     </div>
   );
 }

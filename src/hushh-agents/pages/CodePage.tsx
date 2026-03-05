@@ -85,12 +85,7 @@ export default function CodePage() {
     setMounted(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login', { state: { redirectTo: '/hushh-agents/code' } });
-    }
-  }, [isAuthenticated, isLoading, navigate]);
+  // Auth is optional — code assistant works without login
 
   // Auto-save thread to localStorage whenever it changes
   useEffect(() => {
@@ -274,8 +269,6 @@ export default function CodePage() {
       </div>
     );
   }
-
-  if (!isAuthenticated) return null;
 
   const messageCount = thread.filter((m) => m.role === 'user').length;
 

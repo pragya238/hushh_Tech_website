@@ -1,344 +1,623 @@
 /**
- * Kirkland Agents — Directory Page
+ * Kirkland Agents — Tinder-Style Swipe Experience
  *
- * Luxury redesign with Playfair Display + Inter fonts.
- * Category grid, search, rounded agent cards with MCP badges.
- * Logic unchanged — only UI revamped + responsive.
+ * Saturn editorial design. Framer Motion drag gestures.
+ * Paginated feed (50/batch), optimistic writes, 3-card stack.
+ * Bottom tab bar: Discover | Selected.
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
+import { motion, useMotionValue, useTransform, animate, PanInfo } from 'framer-motion';
+import { useAgentSwipe, type SwipeAgent } from '../hooks/useAgentSwipe';
 import AgentAvatar from '../components/AgentAvatar';
 
-/* ── Font helpers ── */
+/* ── Fonts ── */
 const serif = { fontFamily: "'Playfair Display', serif" };
 const sans = { fontFamily: "'Inter', sans-serif" };
 
-/* ── Color palette (matches HomePage) ── */
+/* ── Colors (Saturn palette) ── */
 const C = {
   primary: '#1A1A1B',
-  accent: '#C1A050',
-  textSub: '#6B7280',
-  border: '#E5E7EB',
-  surface: '#FDFDFD',
+  accent: '#1400FF',
+  gold: '#C1A050',
+  textSub: '#8A8A8A',
+  divider: '#E5E5E5',
   bg: '#FFFFFF',
+  bgLight: '#F5F5F5',
+  selectGreen: '#22C55E',
+  rejectRed: '#EF4444',
 };
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || 'https://ibsisfnjxeowvdtvgzff.supabase.co',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+/* ── Swipe physics ── */
+const DRAG_THRESHOLD = 120;
+const VELOCITY_THRESHOLD = 500;
+const FLY_DISTANCE = 800;
+
+/* ══════════════════════════════════════════
+   DashedSection — crop-mark borders
+   ══════════════════════════════════════════ */
+const DashedSection = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <section
+    className={`relative mx-3 sm:mx-6 my-1 ${className}`}
+    style={{ border: `1px solid ${C.divider}` }}
+  >
+    {[
+      'top-0 left-0 border-t border-l',
+      'top-0 right-0 border-t border-r',
+      'bottom-0 left-0 border-b border-l',
+      'bottom-0 right-0 border-b border-r',
+    ].map((pos) => (
+      <div
+        key={pos}
+        className={`absolute w-4 h-4 pointer-events-none ${pos}`}
+        style={{ borderColor: C.primary, borderWidth: '1px' }}
+      />
+    ))}
+    {children}
+  </section>
 );
 
-/* ── Major Category Definitions ── */
-interface MajorCategory {
-  key: string;
-  label: string;
-  icon: string;
-  keywords: string[];
+/* ══════════════════════════════════════════
+   SwipeCard — Draggable agent card
+   ══════════════════════════════════════════ */
+interface SwipeCardProps {
+  agent: SwipeAgent;
+  isTop: boolean;
+  stackIndex: number;
+  onSwipeRight: (id: string) => void;
+  onSwipeLeft: (id: string) => void;
+  onTap: (id: string) => void;
 }
 
-const MAJOR_CATEGORIES: MajorCategory[] = [
-  { key: 'finance', label: 'Finance', icon: 'account_balance', keywords: ['financial', 'accountant', 'tax', 'bank', 'credit union', 'bookkeeping', 'payroll', 'mortgage', 'loan', 'wealth'] },
-  { key: 'insurance', label: 'Insurance', icon: 'shield', keywords: ['insurance', 'life insurance', 'health insurance', 'auto insurance', 'property insurance', 'underwriting'] },
-  { key: 'real-estate', label: 'Real Est', icon: 'real_estate_agent', keywords: ['real estate', 'property', 'realtor', 'housing', 'apartment', 'commercial real estate', 'land'] },
-  { key: 'health', label: 'Health', icon: 'local_hospital', keywords: ['doctor', 'dentist', 'health', 'medical', 'chiropractic', 'optometrist', 'pharmacy', 'clinic', 'hospital', 'therapy', 'mental health', 'veterinar'] },
-  { key: 'legal', label: 'Legal', icon: 'gavel', keywords: ['lawyer', 'legal', 'attorney', 'law firm', 'notary', 'immigration', 'divorce', 'criminal', 'estate planning'] },
-  { key: 'technology', label: 'Tech', icon: 'code', keywords: ['it ', 'software', 'web design', 'technology', 'computer', 'internet', 'data', 'cloud', 'cyber', 'telecom'] },
-  { key: 'home-services', label: 'Home', icon: 'home_repair_service', keywords: ['plumb', 'electric', 'contractor', 'landscap', 'roofing', 'paint', 'cleaning', 'handyman', 'hvac', 'pest', 'locksmith', 'moving'] },
-  { key: 'food', label: 'Food', icon: 'restaurant', keywords: ['restaurant', 'cafe', 'coffee', 'bar', 'bakery', 'pizza', 'food', 'catering', 'grocery', 'deli', 'brewery'] },
-  { key: 'auto', label: 'Auto', icon: 'directions_car', keywords: ['auto', 'car', 'vehicle', 'mechanic', 'tire', 'body shop', 'towing', 'oil change', 'transmission'] },
-  { key: 'beauty', label: 'Beauty', icon: 'spa', keywords: ['salon', 'spa', 'massage', 'beauty', 'hair', 'nail', 'skin', 'barber', 'cosmetic', 'waxing'] },
-];
+const SwipeCard = memo(function SwipeCard({
+  agent,
+  isTop,
+  stackIndex,
+  onSwipeRight,
+  onSwipeLeft,
+  onTap,
+}: SwipeCardProps) {
+  const x = useMotionValue(0);
 
-/** Check if an agent matches a major category */
-const agentMatchesMajor = (categories: string[], major: MajorCategory): boolean => {
-  if (!categories?.length) return false;
-  const joined = categories.join(' ').toLowerCase();
-  return major.keywords.some((kw) => joined.includes(kw.toLowerCase()));
-};
+  /* Derived transforms from drag position */
+  const rotate = useTransform(x, [-300, 0, 300], [-12, 0, 12]);
+  const selectOpacity = useTransform(x, [0, DRAG_THRESHOLD], [0, 1]);
+  const rejectOpacity = useTransform(x, [-DRAG_THRESHOLD, 0], [1, 0]);
 
-/** Agent type */
-interface KirklandAgent {
-  id: string;
-  name: string;
-  alias: string | null;
-  phone: string | null;
-  city: string | null;
-  state: string | null;
-  avg_rating: number | null;
-  review_count: number;
-  categories: string[];
-  is_closed: boolean;
-  photo_url: string | null;
-}
+  /* Stack depth offset */
+  const scale = 1 - stackIndex * 0.04;
+  const yOffset = stackIndex * 8;
+  const zIndex = 10 - stackIndex;
 
-/* ── Rating display ── */
-const RatingText: React.FC<{ rating: number | null; count: number }> = ({ rating, count }) => {
-  if (!rating) return <span className="text-xs font-light" style={{ color: C.textSub }}>No rating{count > 0 ? ` (${count})` : ''}</span>;
-  return (
-    <span className="text-xs font-light" style={{ color: C.textSub }}>
-      {rating.toFixed(1)} ★{count > 0 ? ` (${count})` : ''}
-    </span>
+  const handleDragEnd = useCallback(
+    (_: unknown, info: PanInfo) => {
+      const absX = Math.abs(info.offset.x);
+      const absVelocity = Math.abs(info.velocity.x);
+
+      /* Tap detection: minimal drag */
+      if (absX < 10) {
+        onTap(agent.id);
+        return;
+      }
+
+      /* Commit swipe if above threshold */
+      if (absX >= DRAG_THRESHOLD || absVelocity >= VELOCITY_THRESHOLD) {
+        const direction = info.offset.x > 0 ? 1 : -1;
+        animate(x, direction * FLY_DISTANCE, {
+          duration: 0.3,
+          onComplete: () => {
+            if (direction > 0) onSwipeRight(agent.id);
+            else onSwipeLeft(agent.id);
+          },
+        });
+      } else {
+        /* Spring back */
+        animate(x, 0, { type: 'spring', stiffness: 500, damping: 30 });
+      }
+    },
+    [agent.id, onSwipeRight, onSwipeLeft, onTap, x]
   );
-};
 
-/* ── Avatar initials with color ── */
-const AVATAR_COLORS = ['#1e3a5f', '#1e40af', '#166534', '#7e22ce', '#374151', '#0f766e', '#9f1239', '#92400e'];
-const AvatarInitials: React.FC<{ name: string }> = ({ name }) => {
-  const initials = name.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-  const colorIdx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_COLORS.length;
+  /* Star rating display */
+  const rating = agent.avg_rating || 0;
+  const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+  const categories = (agent.categories || []).slice(0, 3).join(' · ');
+  const bioSnippet = agent.bio ? (agent.bio.length > 100 ? agent.bio.slice(0, 100) + '…' : agent.bio) : null;
+
   return (
-    <div
-      className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-semibold text-lg shrink-0"
-      style={{ backgroundColor: AVATAR_COLORS[colorIdx] }}
+    <motion.div
+      className="absolute inset-0 touch-none select-none"
+      style={{
+        x: isTop ? x : 0,
+        rotate: isTop ? rotate : 0,
+        scale,
+        y: yOffset,
+        zIndex,
+        opacity: stackIndex > 2 ? 0 : 1 - stackIndex * 0.2,
+      }}
+      drag={isTop ? 'x' : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.9}
+      onDragEnd={isTop ? handleDragEnd : undefined}
     >
-      {initials}
-    </div>
-  );
-};
-
-/* ── Agent Card ── */
-const AgentCard: React.FC<{ agent: KirklandAgent }> = ({ agent }) => {
-  const navigate = useNavigate();
-  return (
-    <button
-      onClick={() => navigate(`/hushh-agents/kirkland/${agent.id}`)}
-      className="w-full text-left border rounded-3xl p-5 shadow-sm flex flex-col relative group cursor-pointer transition-shadow hover:shadow-md active:scale-[0.99]"
-      style={{ borderColor: C.border, background: C.bg, ...sans }}
-      aria-label={`View ${agent.name}`}
-    >
-      <div className="flex items-start justify-between w-full">
-        <div className="flex items-start gap-4">
-          <AvatarInitials name={agent.name} />
-          <div className="flex-1 min-w-0 pr-2">
-            <h3 className="font-semibold text-lg leading-tight mb-1 truncate" style={{ ...serif, color: C.primary }}>
-              {agent.name}
-            </h3>
-            {agent.city && (
-              <div className="flex items-center text-xs mb-2" style={{ color: C.textSub }}>
-                <span className="material-symbols-outlined text-[14px] mr-1">location_on</span>
-                {agent.city}{agent.state ? `, ${agent.state}` : ''}
-              </div>
-            )}
-            <RatingText rating={agent.avg_rating} count={agent.review_count} />
-          </div>
-        </div>
-        <div className="flex items-center gap-2 mt-1 shrink-0">
-          <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-semibold px-2 py-1 rounded-full uppercase tracking-wider">
-            MCP
-          </span>
-          <span className="material-symbols-outlined text-lg transition-colors" style={{ color: C.border }}>
-            chevron_right
-          </span>
-        </div>
-      </div>
-      {/* Category pills */}
-      {agent.categories?.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3">
-          {agent.categories.slice(0, 2).map((cat) => (
-            <span key={cat} className="bg-gray-100 text-[11px] px-3 py-1.5 rounded-full font-medium" style={{ color: C.textSub }}>
-              {cat}
-            </span>
-          ))}
-          {agent.categories.length > 2 && (
-            <span className="text-[11px] py-1.5 font-medium" style={{ color: C.textSub }}>+{agent.categories.length - 2}</span>
-          )}
-        </div>
-      )}
-    </button>
-  );
-};
-
-const KirklandAgentsPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [agents, setAgents] = useState<KirklandAgent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
-
-  /* Fetch agents from Supabase */
-  useEffect(() => {
-    const fetchAgents = async () => {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('kirkland_agents')
-        .select('id, name, alias, phone, city, state, avg_rating, review_count, categories, is_closed, photo_url')
-        .eq('is_closed', false)
-        .order('avg_rating', { ascending: false, nullsFirst: false });
-      if (!error && data) setAgents(data);
-      setIsLoading(false);
-    };
-    fetchAgents();
-  }, []);
-
-  /* Category counts */
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    MAJOR_CATEGORIES.forEach((mc) => {
-      counts[mc.key] = agents.filter((a) => agentMatchesMajor(a.categories, mc)).length;
-    });
-    return counts;
-  }, [agents]);
-
-  /* Filtered agents */
-  const filteredAgents = useMemo(() => {
-    let result = agents;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(a =>
-        a.name.toLowerCase().includes(q) ||
-        a.city?.toLowerCase().includes(q) ||
-        a.categories?.some(c => c.toLowerCase().includes(q))
-      );
-    }
-    if (selectedMajor) {
-      const major = MAJOR_CATEGORIES.find((m) => m.key === selectedMajor);
-      if (major) result = result.filter((a) => agentMatchesMajor(a.categories, major));
-    }
-    return result;
-  }, [agents, searchQuery, selectedMajor]);
-
-  /* Loading state */
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: C.bg, ...sans }}>
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3 animate-pulse">
-            <span className="material-symbols-outlined" style={{ color: C.textSub }}>location_city</span>
-          </div>
-          <p className="text-[13px] font-light" style={{ color: C.textSub }}>Loading agents...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen pb-10" style={{ background: C.bg, color: C.primary, ...sans }}>
-
-      {/* ═══ Header / Title ═══ */}
-      <header className="px-4 sm:px-6 md:px-8 pt-10 sm:pt-12 pb-6 max-w-md sm:max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto">
-        {/* Back button */}
-        <button
-          onClick={() => navigate('/hushh-agents')}
-          className="flex items-center gap-1 mb-6 transition-opacity hover:opacity-70"
-          style={{ color: C.textSub }}
-        >
-          <span className="material-symbols-outlined text-lg">arrow_back</span>
-          <span className="text-xs font-medium uppercase tracking-wider">Back</span>
-        </button>
-
-        <p className="text-[10px] uppercase tracking-[0.2em] font-semibold mb-3" style={{ color: C.textSub }}>
-          Agent Directory
-        </p>
-        <h1 className="leading-tight" style={serif}>
-          <span className="text-4xl sm:text-5xl font-semibold block" style={{ color: C.primary }}>Kirkland</span>
-          <span className="text-4xl sm:text-5xl italic font-normal block mt-1" style={{ color: C.textSub }}>Agents</span>
-        </h1>
-        <p className="mt-4 text-sm font-light" style={{ color: C.textSub, ...sans }}>
-          {agents.length} agents with MCP endpoints. Filter by category.
-        </p>
-      </header>
-
-      <main className="px-4 sm:px-6 md:px-8 max-w-md sm:max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto">
-
-        {/* ═══ Search ═══ */}
-        <section className="mb-8">
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <span className="material-symbols-outlined text-[20px]" style={{ color: C.textSub }}>search</span>
-            </span>
-            <input
-              type="text"
-              placeholder="Search agents..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-full py-3.5 pl-11 pr-4 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1"
+      <div
+        className="w-full h-full rounded-none overflow-hidden flex flex-col"
+        style={{ background: C.bg, border: `1px solid ${C.divider}` }}
+      >
+        {/* ── SELECT / PASS overlays ── */}
+        {isTop && (
+          <>
+            <motion.div
+              className="absolute top-6 left-6 z-20 px-4 py-2 rounded-sm border-2 font-bold text-lg"
               style={{
-                background: C.bg,
-                border: `1px solid ${C.border}`,
-                color: C.primary,
+                opacity: selectOpacity,
+                color: C.selectGreen,
+                borderColor: C.selectGreen,
                 ...sans,
-              }}
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2" aria-label="Clear search">
-                <span className="material-symbols-outlined text-[18px]" style={{ color: C.textSub }}>close</span>
-              </button>
-            )}
-          </div>
-        </section>
-
-        {/* ═══ Category Filter Grid ═══ */}
-        <section className="mb-10">
-          <p className="text-[10px] uppercase tracking-[0.15em] font-medium mb-4" style={{ color: C.textSub }}>
-            Filter by Category
-          </p>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
-            {/* All button */}
-            <button
-              onClick={() => setSelectedMajor(null)}
-              className="rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center aspect-square shadow-md transition-transform active:scale-95"
-              style={{
-                background: !selectedMajor ? C.primary : C.bg,
-                color: !selectedMajor ? '#FFFFFF' : C.textSub,
-                border: `1px solid ${!selectedMajor ? C.primary : C.border}`,
+                transform: 'rotate(-12deg)',
               }}
             >
-              <span className="material-symbols-outlined mb-2 text-xl">apps</span>
-              <span className="text-[10px] font-semibold tracking-wide uppercase mb-1">All</span>
-              <span className="text-[10px] font-light" style={{ opacity: 0.7 }}>{agents.length}</span>
-            </button>
+              SELECT ✓
+            </motion.div>
+            <motion.div
+              className="absolute top-6 right-6 z-20 px-4 py-2 rounded-sm border-2 font-bold text-lg"
+              style={{
+                opacity: rejectOpacity,
+                color: C.rejectRed,
+                borderColor: C.rejectRed,
+                ...sans,
+                transform: 'rotate(12deg)',
+              }}
+            >
+              PASS ✕
+            </motion.div>
+          </>
+        )}
 
-            {MAJOR_CATEGORIES.map((mc) => {
-              const count = categoryCounts[mc.key] || 0;
-              if (count === 0) return null;
-              const isActive = selectedMajor === mc.key;
-              return (
-                <button
-                  key={mc.key}
-                  onClick={() => setSelectedMajor(isActive ? null : mc.key)}
-                  className="rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center aspect-square transition-all active:scale-95"
-                  style={{
-                    background: isActive ? C.primary : C.bg,
-                    color: isActive ? '#FFFFFF' : C.textSub,
-                    border: `1px solid ${isActive ? C.primary : C.border}`,
-                  }}
-                >
-                  <span className="material-symbols-outlined mb-2 text-xl">{mc.icon}</span>
-                  <span className="text-[10px] font-semibold tracking-wide uppercase mb-1 truncate w-full text-center">{mc.label}</span>
-                  <span className="text-[10px] font-light" style={{ opacity: 0.7 }}>{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ═══ Agent List ═══ */}
-        <section className="pb-8">
-          <p className="text-[10px] uppercase tracking-[0.15em] font-medium mb-4" style={{ color: C.textSub }}>
-            {searchQuery || selectedMajor
-              ? `Results · ${filteredAgents.length}`
-              : `All Agents · ${agents.length}`}
-          </p>
-
-          {filteredAgents.length === 0 ? (
-            <div className="text-center py-16">
-              <span className="material-symbols-outlined text-[40px] mb-3 block" style={{ color: C.border }}>search_off</span>
-              <p className="text-[13px] font-light" style={{ color: C.textSub }}>No agents found</p>
-              <p className="text-[11px] font-light mt-1" style={{ color: C.textSub }}>Try a different category or search</p>
-            </div>
+        {/* ── Agent Photo ── */}
+        <div
+          className="relative w-full flex-shrink-0 flex items-center justify-center overflow-hidden"
+          style={{ height: '52%', background: C.bgLight }}
+        >
+          {agent.photo_url ? (
+            <img
+              src={agent.photo_url}
+              alt={agent.name}
+              className="w-full h-full object-cover"
+              loading={isTop ? 'eager' : 'lazy'}
+              draggable={false}
+            />
           ) : (
-            <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
-              {filteredAgents.map((agent) => (
-                <AgentCard key={agent.id} agent={agent} />
-              ))}
-            </div>
+            <AgentAvatar name={agent.name} size="xl" />
           )}
-        </section>
-      </main>
+        </div>
+
+        {/* ── Card Content ── */}
+        <div className="flex-1 px-5 py-4 flex flex-col gap-2 overflow-hidden">
+          {/* Rating */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm" style={{ color: C.gold }}>{stars}</span>
+            <span className="text-xs" style={{ color: C.textSub, ...sans }}>
+              {rating.toFixed(1)} · {agent.review_count} reviews
+            </span>
+          </div>
+
+          {/* Name */}
+          <h2
+            className="text-2xl sm:text-3xl font-normal leading-tight truncate"
+            style={{ ...serif, color: C.primary }}
+          >
+            {agent.name}
+          </h2>
+
+          {/* Categories */}
+          {categories && (
+            <p className="text-sm truncate" style={{ color: C.textSub, ...sans }}>
+              {categories}
+            </p>
+          )}
+
+          {/* Location */}
+          {agent.city && (
+            <p className="text-xs flex items-center gap-1" style={{ color: C.textSub, ...sans }}>
+              <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 0, 'wght' 300" }}>
+                location_on
+              </span>
+              {agent.city}{agent.state ? `, ${agent.state}` : ''}{agent.zip ? ` ${agent.zip}` : ''}
+            </p>
+          )}
+
+          {/* Bio */}
+          {bioSnippet && (
+            <p
+              className="text-sm italic leading-relaxed line-clamp-2 mt-1"
+              style={{ color: C.textSub, ...sans }}
+            >
+              "{bioSnippet}"
+            </p>
+          )}
+
+          {/* Badges */}
+          <div className="flex gap-2 mt-auto pt-2">
+            <span
+              className="text-[10px] px-3 py-1 tracking-wider uppercase font-medium"
+              style={{ background: C.bgLight, color: C.accent, ...sans }}
+            >
+              🤖 MCP Enabled
+            </span>
+            {agent.years_in_business && (
+              <span
+                className="text-[10px] px-3 py-1 tracking-wider uppercase font-medium"
+                style={{ background: C.bgLight, color: C.primary, ...sans }}
+              >
+                {agent.years_in_business}yr exp
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+
+/* ══════════════════════════════════════════
+   SelectedAgentCard — Horizontal card
+   ══════════════════════════════════════════ */
+const SelectedAgentCard = memo(function SelectedAgentCard({
+  agent,
+  onTap,
+  onRemove,
+}: {
+  agent: SwipeAgent;
+  onTap: (id: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const categories = (agent.categories || []).slice(0, 2).join(' · ');
+
+  return (
+    <div
+      className="flex items-center gap-4 px-4 py-3 cursor-pointer transition-opacity hover:opacity-80"
+      style={{ borderBottom: `1px solid ${C.divider}` }}
+      onClick={() => onTap(agent.id)}
+      role="button"
+      tabIndex={0}
+      aria-label={`View ${agent.name}`}
+    >
+      {/* Avatar */}
+      <div className="w-14 h-14 flex-shrink-0 rounded-sm overflow-hidden" style={{ background: C.bgLight }}>
+        {agent.photo_url ? (
+          <img src={agent.photo_url} alt={agent.name} className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <AgentAvatar name={agent.name} size="md" />
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <h3 className="text-base font-normal truncate" style={{ ...serif, color: C.primary }}>
+          {agent.name}
+        </h3>
+        <p className="text-xs truncate" style={{ color: C.textSub, ...sans }}>
+          {categories}
+          {agent.city ? ` · ${agent.city}` : ''}
+        </p>
+        <div className="flex items-center gap-1 mt-0.5">
+          <span className="text-xs" style={{ color: C.gold }}>
+            {'★'.repeat(Math.round(agent.avg_rating || 0))}
+          </span>
+          <span className="text-[10px]" style={{ color: C.textSub }}>
+            {(agent.avg_rating || 0).toFixed(1)}
+          </span>
+        </div>
+      </div>
+
+      {/* Remove button */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onRemove(agent.id); }}
+        className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-red-50"
+        aria-label="Remove agent"
+      >
+        <span className="material-symbols-outlined text-lg" style={{ color: C.rejectRed, fontVariationSettings: "'FILL' 0, 'wght' 300" }}>
+          close
+        </span>
+      </button>
     </div>
   );
-};
+});
 
-export default KirklandAgentsPage;
+/* ══════════════════════════════════════════
+   Main Page Component
+   ══════════════════════════════════════════ */
+export default function KirklandAgentsPage() {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'discover' | 'selected'>('discover');
+
+  const {
+    cards,
+    selectedAgents,
+    isLoading,
+    isEmpty,
+    swipeRight,
+    swipeLeft,
+    removeSelected,
+    stats,
+  } = useAgentSwipe();
+
+  /* Navigate to agent detail */
+  const handleTap = useCallback((id: string) => {
+    navigate(`/hushh-agents/kirkland/${id}`);
+  }, [navigate]);
+
+  /* Button-triggered swipes (for accessibility + desktop) */
+  const handleButtonReject = useCallback(() => {
+    if (cards.length > 0) swipeLeft(cards[0].id);
+  }, [cards, swipeLeft]);
+
+  const handleButtonSelect = useCallback(() => {
+    if (cards.length > 0) swipeRight(cards[0].id);
+  }, [cards, swipeRight]);
+
+  return (
+    <div
+      className="min-h-screen flex flex-col selection:bg-blue-100"
+      style={{ background: C.bg, color: C.primary, ...sans }}
+    >
+      {/* ═══ Header ═══ */}
+      <DashedSection>
+        <header className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/hushh-agents')}
+            className="flex items-center gap-2 hover:opacity-60 transition-opacity"
+            aria-label="Back to Hushh Agents"
+          >
+            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 0, 'wght' 300" }}>
+              arrow_back
+            </span>
+            <span className="text-sm" style={{ color: C.textSub }}>Back</span>
+          </button>
+
+          <h1
+            className="text-lg sm:text-xl tracking-wider font-normal"
+            style={{ ...serif, color: C.primary }}
+          >
+            {activeTab === 'discover' ? 'DISCOVER' : `SELECTED (${stats.selected})`}
+          </h1>
+
+          <div className="w-16" /> {/* Spacer for centering */}
+        </header>
+      </DashedSection>
+
+      {/* ═══ Content ═══ */}
+      <DashedSection className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col items-center px-4 pt-4 pb-24">
+          {activeTab === 'discover' ? (
+            /* ── Discover View ── */
+            <div className="w-full max-w-sm flex-1 flex flex-col items-center">
+              {/* Card Stack */}
+              <div
+                className="relative w-full flex-1 max-h-[520px] min-h-[400px]"
+                style={{ perspective: '1000px' }}
+              >
+                {isLoading ? (
+                  /* Loading skeleton */
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-20 h-20 bg-gray-50 rounded-sm mx-auto mb-4 animate-pulse" />
+                      <p className="text-sm" style={{ color: C.textSub }}>Loading agents...</p>
+                    </div>
+                  </div>
+                ) : isEmpty && cards.length === 0 ? (
+                  /* Empty state */
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center px-6">
+                      <span
+                        className="material-symbols-outlined text-5xl mb-4 block"
+                        style={{ color: C.divider, fontVariationSettings: "'FILL' 0, 'wght' 200" }}
+                      >
+                        check_circle
+                      </span>
+                      <h2 className="text-2xl mb-2" style={serif}>All caught up!</h2>
+                      <p className="text-sm mb-6" style={{ color: C.textSub }}>
+                        You've discovered all {stats.total} agents.
+                        Check your selected list!
+                      </p>
+                      <button
+                        onClick={() => setActiveTab('selected')}
+                        className="px-6 py-3 text-sm font-medium text-white"
+                        style={{ background: C.accent }}
+                      >
+                        View Selected ({stats.selected})
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Card stack — only render top 3 */
+                  cards.slice(0, 3).map((agent, i) => (
+                    <SwipeCard
+                      key={agent.id}
+                      agent={agent}
+                      isTop={i === 0}
+                      stackIndex={i}
+                      onSwipeRight={swipeRight}
+                      onSwipeLeft={swipeLeft}
+                      onTap={handleTap}
+                    />
+                  ))
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              {cards.length > 0 && !isLoading && (
+                <div className="flex items-center gap-6 py-5">
+                  {/* Reject */}
+                  <button
+                    onClick={handleButtonReject}
+                    className="w-16 h-16 rounded-full flex items-center justify-center transition-transform active:scale-90"
+                    style={{ border: `2px solid ${C.rejectRed}` }}
+                    aria-label="Pass"
+                  >
+                    <span className="material-symbols-outlined text-3xl" style={{ color: C.rejectRed }}>
+                      close
+                    </span>
+                  </button>
+
+                  {/* Select */}
+                  <button
+                    onClick={handleButtonSelect}
+                    className="w-16 h-16 rounded-full flex items-center justify-center transition-transform active:scale-90"
+                    style={{ border: `2px solid ${C.selectGreen}` }}
+                    aria-label="Select"
+                  >
+                    <span className="material-symbols-outlined text-3xl" style={{ color: C.selectGreen }}>
+                      favorite
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Progress */}
+              {!isLoading && (
+                <div className="w-full flex items-center gap-3 pb-2">
+                  <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: C.divider }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        background: C.accent,
+                        width: stats.total > 0 ? `${(stats.swiped / stats.total) * 100}%` : '0%',
+                      }}
+                    />
+                  </div>
+                  <span className="text-[11px] flex-shrink-0" style={{ color: C.textSub }}>
+                    {stats.swiped} / {stats.total}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* ── Selected View ── */
+            <div className="w-full max-w-lg flex-1">
+              {selectedAgents.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center py-20">
+                  <div className="text-center">
+                    <span
+                      className="material-symbols-outlined text-5xl mb-4 block"
+                      style={{ color: C.divider, fontVariationSettings: "'FILL' 0, 'wght' 200" }}
+                    >
+                      swipe_right
+                    </span>
+                    <h2 className="text-xl mb-2" style={serif}>No agents selected yet</h2>
+                    <p className="text-sm mb-6" style={{ color: C.textSub }}>
+                      Swipe right on agents you'd like to work with.
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('discover')}
+                      className="px-6 py-3 text-sm font-medium text-white"
+                      style={{ background: C.accent }}
+                    >
+                      Start Discovering
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="divide-y" style={{ borderColor: C.divider }}>
+                  <div className="px-4 py-3">
+                    <p
+                      className="text-[11px] tracking-[0.25em] uppercase font-medium"
+                      style={{ color: C.textSub }}
+                    >
+                      {selectedAgents.length} agent{selectedAgents.length !== 1 ? 's' : ''} selected
+                    </p>
+                  </div>
+                  {selectedAgents.map((agent) => (
+                    <SelectedAgentCard
+                      key={agent.id}
+                      agent={agent}
+                      onTap={handleTap}
+                      onRemove={removeSelected}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </DashedSection>
+
+      {/* ═══ Bottom Tab Bar — Fixed ═══ */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 flex"
+        style={{
+          background: C.bg,
+          borderTop: `1px solid ${C.divider}`,
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+        {/* Discover tab */}
+        <button
+          onClick={() => setActiveTab('discover')}
+          className="flex-1 flex flex-col items-center gap-1 py-3 transition-opacity"
+          style={{ opacity: activeTab === 'discover' ? 1 : 0.4 }}
+          aria-label="Discover agents"
+        >
+          <span
+            className="material-symbols-outlined text-xl"
+            style={{
+              color: activeTab === 'discover' ? C.accent : C.textSub,
+              fontVariationSettings: activeTab === 'discover' ? "'FILL' 1, 'wght' 400" : "'FILL' 0, 'wght' 300",
+            }}
+          >
+            style
+          </span>
+          <span
+            className="text-[11px] font-medium"
+            style={{ color: activeTab === 'discover' ? C.accent : C.textSub }}
+          >
+            Discover
+          </span>
+          {activeTab === 'discover' && (
+            <div className="absolute top-0 left-1/4 right-3/4 h-0.5" style={{ background: C.accent }} />
+          )}
+        </button>
+
+        {/* Selected tab */}
+        <button
+          onClick={() => setActiveTab('selected')}
+          className="flex-1 flex flex-col items-center gap-1 py-3 transition-opacity relative"
+          style={{ opacity: activeTab === 'selected' ? 1 : 0.4 }}
+          aria-label={`Selected agents (${stats.selected})`}
+        >
+          <span
+            className="material-symbols-outlined text-xl"
+            style={{
+              color: activeTab === 'selected' ? C.accent : C.textSub,
+              fontVariationSettings: activeTab === 'selected' ? "'FILL' 1, 'wght' 400" : "'FILL' 0, 'wght' 300",
+            }}
+          >
+            favorite
+          </span>
+          <span
+            className="text-[11px] font-medium"
+            style={{ color: activeTab === 'selected' ? C.accent : C.textSub }}
+          >
+            Selected
+          </span>
+
+          {/* Badge */}
+          {stats.selected > 0 && (
+            <span
+              className="absolute top-2 right-1/4 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-bold text-white"
+              style={{ background: C.selectGreen, transform: 'translate(50%, -25%)' }}
+            >
+              {stats.selected > 99 ? '99+' : stats.selected}
+            </span>
+          )}
+
+          {activeTab === 'selected' && (
+            <div className="absolute top-0 left-1/4 right-3/4 h-0.5" style={{ background: C.accent }} />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}

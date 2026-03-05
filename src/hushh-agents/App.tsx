@@ -14,7 +14,7 @@ import { FaApple } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from './hooks/useAuth';
 import { HUSHH_BRANDING } from './core/constants';
-import HushhLogo from '../components/images/Hushhogo.png';
+import HushhLogo from './assets/Hushhogo.png';
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -25,6 +25,7 @@ const KirklandAgentsPage = lazy(() => import('./pages/KirklandAgentsPage'));
 const AgentDetailPage = lazy(() => import('./pages/AgentDetailPage'));
 const AgentChatPage = lazy(() => import('./pages/AgentChatPage'));
 const AgentOnboardPage = lazy(() => import('./pages/AgentOnboardPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 
 // Playfair heading style
 const playfair = { fontFamily: "'Playfair Display', serif" };
@@ -223,15 +224,12 @@ const LoginScreen: React.FC<{
   </div>
 );
 
-const App: React.FC = () => {
-  const { isAuthenticated, isLoading, user, signIn, signOut, error } = useAuth();
+// Auth-gated wrapper — redirects to login if not authenticated
+const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading, signIn, error } = useAuth();
 
-  // Loading state
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
+  if (isLoading) return <LoadingScreen />;
 
-  // Not authenticated - show login
   if (!isAuthenticated) {
     return (
       <LoginScreen
@@ -243,11 +241,14 @@ const App: React.FC = () => {
     );
   }
 
-  // Authenticated - show app
+  return <>{children}</>;
+};
+
+const App: React.FC = () => {
   return (
     <Suspense fallback={<LoadingScreen />}>
       <Routes>
-        {/* Home - Agent Selection */}
+        {/* Home - Public landing page (no auth gate) */}
         <Route
           index
           element={<HomePage />}
@@ -293,6 +294,12 @@ const App: React.FC = () => {
         <Route
           path="onboard"
           element={<AgentOnboardPage />}
+        />
+
+        {/* Dedicated Login Page (stays within /hushh-agents) */}
+        <Route
+          path="login"
+          element={<LoginPage />}
         />
 
         {/* Default chat (Hushh agent) */}

@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
+/** Supabase URL — read from env, used for both client and edge function calls */
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+
 const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || 'https://ibsisfnjxeowvdtvgzff.supabase.co',
+  SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 );
 
@@ -41,8 +44,6 @@ const INITIAL_FORM: AgentOnboardForm = {
   years_in_business: null,
   photo_url: '',
 };
-
-const SUPABASE_URL = 'https://ibsisfnjxeowvdtvgzff.supabase.co';
 
 export const useAgentOnboard = () => {
   const [form, setForm] = useState<AgentOnboardForm>(INITIAL_FORM);

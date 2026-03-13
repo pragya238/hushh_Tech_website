@@ -29,13 +29,13 @@ const ProfilePage: React.FC = () => {
       <HushhTechBackHeader />
 
       {/* scrollable content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-5 py-2 sm:px-6 md:px-8">
-        <div className="w-full max-w-[440px] flex flex-col items-center gap-8">
+      <main className="flex-1 flex flex-col items-start justify-center px-5 py-2 sm:px-6 md:px-8">
+        <div className="w-full max-w-[440px] flex flex-col items-start gap-8">
 
           {/* pill badge */}
           <span className="inline-flex items-center gap-1.5 rounded-full border border-hushh-blue/20 bg-hushh-blue/5 px-4 py-1">
-            <span className="material-symbols-rounded text-[16px] text-hushh-blue uppercase">person</span>
-            <span className="text-[11px] tracking-[0.14em] uppercase text-hushh-blue font-medium">
+            <span className="material-symbols-rounded text-[10px] text-hushh-blue uppercase">person</span>
+            <span className="text-[10px] tracking-[0.14em] uppercase text-hushh-blue font-medium">
               Profile
             </span>
           </span>
@@ -48,7 +48,7 @@ const ProfilePage: React.FC = () => {
           />
 
           {/* headline */}
-          <div className="text-center space-y-3">
+          <div className="text-left space-y-3">
             <h1
               className="text-[32px] md:text-[38px] leading-[1.08] tracking-tight text-gray-900 font-serif"
               style={playfair}
@@ -56,7 +56,7 @@ const ProfilePage: React.FC = () => {
               Investing in the{' '}
               <span className="text-gray-400 italic font-light">Future.</span>
             </h1>
-            <p className="text-[15px] md:text-[17px] leading-relaxed text-gray-500 max-w-[360px] mx-auto">
+            <p className="text-[15px] md:text-[17px] leading-relaxed text-gray-500 max-w-[360px]">
               The AI-powered Berkshire Hathaway. We combine AI and human expertise to invest in exceptional businesses for long-term value creation.
             </p>
           </div>
@@ -79,7 +79,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           {/* trust indicators */}
-          <div className="flex items-center justify-center gap-6 mt-4">
+          <div className="flex items-center justify-start gap-6 mt-4">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-ios-green animate-pulse" />
               <p className="text-[10px] tracking-[0.18em] uppercase text-gray-400 font-medium">
@@ -95,7 +95,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           {/* tagline */}
-          <p className="text-[12px] text-gray-400 tracking-wide text-center mt-2">
+          <p className="text-[12px] text-gray-400 tracking-wide text-left mt-2">
             Secure. Private. AI-Powered.
           </p>
         </div>

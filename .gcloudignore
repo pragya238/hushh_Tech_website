@@ -1,0 +1,40 @@
+# =============================================================================
+# GCloud Ignore — controls what gets uploaded to Cloud Build
+# This overrides .gitignore to INCLUDE dist/ (pre-built Vite output)
+# =============================================================================
+
+# Include dist/ (needed for runtime-only Dockerfile)
+# !dist/  ← dist is NOT ignored here
+
+# Dependencies
+node_modules/
+
+# Git
+.git/
+.github/
+
+# IDE
+.vscode/
+.cursor/
+
+# Source code (not needed for runtime-only Docker build)
+src/
+
+# Mobile
+android/
+ios/
+
+# Tests
+tests/
+
+# SQL
+supabase/
+*.sql
+
+# Docs
+docs/
+
+# Misc
+playstore-assets/
+hushh_api_reports/
+*.md

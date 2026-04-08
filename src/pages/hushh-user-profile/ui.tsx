@@ -41,6 +41,7 @@ const HushhUserProfilePage: React.FC = () => {
   const {
     form, investorProfile, loading, loadingSeconds, isProcessing, investorStatus,
     hasOnboardingData, isApplePassLoading, isGooglePassLoading, nwsResult, nwsLoading,
+    appleWalletSupported, appleWalletSupportMessage,
     hasCopied, onCopy, profileUrl, navigate,
     handleChange, handleBack, handleSave,
     isDirty, isSaving, handleSaveChanges,
@@ -388,7 +389,12 @@ const HushhUserProfilePage: React.FC = () => {
             </button>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <button type="button" onClick={handleAppleWalletPass} disabled={isApplePassLoading} className="border border-gray-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 hover:border-hushh-blue/30 transition-colors disabled:opacity-50">
+            <button
+              type="button"
+              onClick={handleAppleWalletPass}
+              disabled={isApplePassLoading || !appleWalletSupported}
+              className="border border-gray-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 hover:border-hushh-blue/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <FaApple className="text-lg" />
               <span className="text-xs font-medium">{isApplePassLoading ? "Loading..." : "Apple Wallet"}</span>
             </button>
@@ -397,6 +403,11 @@ const HushhUserProfilePage: React.FC = () => {
               <span className="text-xs font-medium">{isGooglePassLoading ? "Loading..." : "Google Wallet"}</span>
             </button>
           </div>
+          {!appleWalletSupported && (
+            <p className="mt-3 text-xs text-gray-500 font-light">
+              {appleWalletSupportMessage}
+            </p>
+          )}
         </section>
 
         {/* ── Bottom CTA ── */}

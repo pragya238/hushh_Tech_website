@@ -1,5 +1,8 @@
-const HUSHH_WALLET_ENDPOINT = "https://hushh-wallet.vercel.app/api/passes/universal/create";
-const HUSHH_GOOGLE_WALLET_ENDPOINT = "https://hushh-wallet.vercel.app/api/passes/google/create";
+const HUSHH_WALLET_ENDPOINT = "/api/wallet-pass";
+const HUSHH_GOOGLE_WALLET_ENDPOINT = "/api/google-wallet-pass";
+
+export const APPLE_WALLET_SUPPORT_MESSAGE =
+  "Available on iPhone in Wallet-supported browsers.";
 
 export interface WalletPassInput {
   name: string;
@@ -21,6 +24,12 @@ interface GoogleWalletResult {
   filename?: string;
 }
 
+interface AppleWalletSupportInput {
+  userAgent?: string;
+  platform?: string;
+  maxTouchPoints?: number;
+}
+
 const sanitizeForFilename = (value: string) => {
   const safe = value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   return safe || "hushh-gold-card";
@@ -36,7 +45,7 @@ const getInvestmentClass = (amount?: number | null) => {
   return "Class C";
 };
 
-const buildGoldPassPayload = (input: WalletPassInput) => {
+export const buildGoldPassPayload = (input: WalletPassInput) => {
   const profileUrl = input.slug
     ? `https://hushhtech.com/investor/${input.slug}`
     : "https://hushhtech.com";
@@ -80,7 +89,44 @@ const buildGoldPassPayload = (input: WalletPassInput) => {
   };
 };
 
+export const isAppleWalletSupported = (
+  input: AppleWalletSupportInput = {}
+) => {
+  const nav = typeof navigator !== "undefined" ? navigator : undefined;
+  const userAgent = input.userAgent ?? nav?.userAgent ?? "";
+  const platform = input.platform ?? nav?.platform ?? "";
+  const maxTouchPoints = input.maxTouchPoints ?? nav?.maxTouchPoints ?? 0;
+
+  const isAppleMobilePlatform = /(iPhone|iPad|iPod)/i.test(platform);
+  const isIpadOs = platform === "MacIntel" && maxTouchPoints > 1;
+  const isMobileAppleUserAgent = /(iPhone|iPad|iPod)/i.test(userAgent);
+
+  return isAppleMobilePlatform || isIpadOs || (isMobileAppleUserAgent && maxTouchPoints > 1);
+};
+
+const submitWalletPassForm = (endpoint: string, payload: ReturnType<typeof buildGoldPassPayload>) => {
+  if (typeof document === "undefined") {
+    throw new Error("Wallet pass downloads require a browser environment");
+  }
+
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = endpoint;
+  form.style.display = "none";
+
+  const payloadInput = document.createElement("input");
+  payloadInput.type = "hidden";
+  payloadInput.name = "payload";
+  payloadInput.value = JSON.stringify(payload);
+  form.appendChild(payloadInput);
+
+  (document.body || document.documentElement).appendChild(form);
+  form.submit();
+  window.setTimeout(() => form.remove(), 1000);
+};
+
 export async function requestHushhGoldPass(input: WalletPassInput): Promise<WalletPassResult> {
+  // Wallet API calls stay same-origin so main-web CSP can remain strict.
   const response = await fetch(HUSHH_WALLET_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -99,18 +145,7 @@ export async function requestHushhGoldPass(input: WalletPassInput): Promise<Wall
 }
 
 export async function downloadHushhGoldPass(input: WalletPassInput): Promise<void> {
-  const { blob, filename } = await requestHushhGoldPass(input);
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-
-  setTimeout(() => {
-    window.URL.revokeObjectURL(url);
-  }, 4000);
+  submitWalletPassForm(HUSHH_WALLET_ENDPOINT, buildGoldPassPayload(input));
 }
 
 export async function requestGoogleWalletPass(input: WalletPassInput): Promise<GoogleWalletResult> {

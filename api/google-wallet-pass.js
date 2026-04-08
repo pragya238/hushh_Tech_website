@@ -1,5 +1,5 @@
-const UPSTREAM_APPLE_WALLET_ENDPOINT =
-  "https://hushh-wallet.vercel.app/api/passes/universal/create";
+const UPSTREAM_GOOGLE_WALLET_ENDPOINT =
+  "https://hushh-wallet.vercel.app/api/passes/google/create";
 
 const resolvePayload = (body) => {
   if (!body) return null;
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const forward = await fetch(UPSTREAM_APPLE_WALLET_ENDPOINT, {
+    const forward = await fetch(UPSTREAM_GOOGLE_WALLET_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -33,25 +33,28 @@ export default async function handler(req, res) {
 
     if (!forward.ok) {
       const text = await forward.text();
-      return res.status(forward.status).json({ error: "Wallet pass generation failed", detail: text });
+      return res.status(forward.status).json({
+        error: "Google Wallet pass generation failed",
+        detail: text,
+      });
+    }
+
+    const contentType = forward.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await forward.json();
+      return res.status(200).json(data);
     }
 
     const buffer = Buffer.from(await forward.arrayBuffer());
     const contentDisposition =
-      forward.headers.get("content-disposition") || 'attachment; filename="hushh-profile.pkpass"';
-    const passSerial = forward.headers.get("x-pass-serial");
-    const passType = forward.headers.get("x-pass-type");
+      forward.headers.get("content-disposition") ||
+      'attachment; filename="hushh-profile-google.pkpass"';
 
-    res.setHeader(
-      "Content-Type",
-      forward.headers.get("content-type") || "application/vnd.apple.pkpass"
-    );
+    res.setHeader("Content-Type", contentType || "application/octet-stream");
     res.setHeader("Content-Disposition", contentDisposition);
-    if (passSerial) res.setHeader("X-Pass-Serial", passSerial);
-    if (passType) res.setHeader("X-Pass-Type", passType);
     res.status(200).send(buffer);
   } catch (error) {
-    console.error("wallet-pass proxy error:", error);
+    console.error("google-wallet-pass proxy error:", error);
     res.status(500).json({ error: "Proxy failed", detail: error?.message });
   }
 }

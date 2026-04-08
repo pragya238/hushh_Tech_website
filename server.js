@@ -42,6 +42,7 @@ app.use((_req, res, next) => {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.plaid.com",
       "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com data:",
       "img-src 'self' data: blob: https: http:",
+      // Wallet upstream traffic must stay behind same-origin /api proxies to avoid CSP regressions.
       "connect-src 'self' https://*.plaid.com https://*.supabase.co wss://*.supabase.co https://www.google.com https://www.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://api.emailjs.com https://generativelanguage.googleapis.com https://*.googleapis.com https://www.walletlink.org wss://www.walletlink.org wss://mainnet.infura.io wss://*.infura.io https://*.seondnsresolve.com https://www.recaptcha.net https://hushhtech-nda-generation-53407187172.us-central1.run.app",
       "frame-src 'self' https://cdn.plaid.com https://*.plaid.com https://www.google.com https://www.gstatic.com https://calendly.com https://www.recaptcha.net",
       "media-src 'self' blob: data:",
@@ -85,6 +86,7 @@ app.all('/api/gemini-ephemeral-token', async (req, res) => wrapHandler(await loa
 app.all('/api/generate-investor-profile', async (req, res) => wrapHandler(await loadApi('generate-investor-profile'))(req, res));
 app.all('/api/send-email-notification', async (req, res) => wrapHandler(await loadApi('send-email-notification'))(req, res));
 app.all('/api/wallet-pass', async (req, res) => wrapHandler(await loadApi('wallet-pass'))(req, res));
+app.all('/api/google-wallet-pass', async (req, res) => wrapHandler(await loadApi('google-wallet-pass'))(req, res));
 
 // ---------------------------------------------------------------------------
 // .well-known routes (Apple App Site Association, etc.)

@@ -8,7 +8,12 @@ import { useToast, useClipboard } from '@chakra-ui/react';
 import { useFooterVisibility } from '../../utils/useFooterVisibility';
 import resources from '../../resources/resources';
 import { generateInvestorProfile } from '../../services/investorProfile/apiClient';
-import { downloadHushhGoldPass, launchGoogleWalletPass } from '../../services/walletPass';
+import {
+  APPLE_WALLET_SUPPORT_MESSAGE,
+  downloadHushhGoldPass,
+  isAppleWalletSupported,
+  launchGoogleWalletPass,
+} from '../../services/walletPass';
 import { InvestorProfile, FIELD_LABELS, VALUE_LABELS } from '../../types/investorProfile';
 import { calculateNWSFromDB, NWSResult } from '../../services/networkScore/calculateNWS';
 import { useAuthSession } from '../../auth/AuthSessionProvider';
@@ -121,6 +126,7 @@ export const useHushhUserProfileLogic = () => {
   // Dirty tracking for AI profile field edits (separate from form edits)
   const [isAiProfileDirty, setIsAiProfileDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const appleWalletSupported = isAppleWalletSupported();
   // NWS Score state
   const [nwsResult, setNwsResult] = useState<NWSResult | null>(null);
   const [nwsLoading, setNwsLoading] = useState(true);
@@ -675,6 +681,16 @@ export const useHushhUserProfileLogic = () => {
 
   // Handle Apple Wallet pass download
   const handleAppleWalletPass = async () => {
+    if (!appleWalletSupported) {
+      toast({
+        title: "Apple Wallet unavailable",
+        description: APPLE_WALLET_SUPPORT_MESSAGE,
+        status: "info",
+        duration: 4000,
+      });
+      return;
+    }
+
     if (!form.name) {
       toast({
         title: "Name required",
@@ -696,9 +712,9 @@ export const useHushhUserProfileLogic = () => {
         investmentAmount: typeof form.initialInvestmentAmount === "number" ? form.initialInvestmentAmount : null,
       });
       toast({
-        title: "Pass Downloaded",
-        description: "Your Apple Wallet pass has been downloaded",
-        status: "success",
+        title: "Opening Apple Wallet",
+        description: "Open the pass preview to add it to Apple Wallet.",
+        status: "info",
         duration: 3000,
       });
     } catch (error) {
@@ -827,6 +843,7 @@ export const useHushhUserProfileLogic = () => {
     form, setForm, userId, investorProfile, setInvestorProfile, profileSlug,
     loading, loadingSeconds, isProcessing, investorStatus,
     setLoading, hasOnboardingData, isApplePassLoading, isGooglePassLoading,
+    appleWalletSupported, appleWalletSupportMessage: APPLE_WALLET_SUPPORT_MESSAGE,
     editingField, setEditingField, nwsResult, nwsLoading,
     isFooterVisible, hasCopied, onCopy, profileUrl, navigate, toast,
     FIELD_OPTIONS, MULTI_SELECT_FIELDS, COUNTRIES, defaultFormState,

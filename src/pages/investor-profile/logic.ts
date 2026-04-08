@@ -12,7 +12,12 @@ import {
   InvestorProfile,
 } from "../../types/investorProfile";
 import resources from "../../resources/resources";
-import { downloadHushhGoldPass } from "../../services/walletPass";
+import {
+  APPLE_WALLET_SUPPORT_MESSAGE,
+  downloadHushhGoldPass,
+  isAppleWalletSupported,
+  launchGoogleWalletPass,
+} from "../../services/walletPass";
 
 export type FlowStep = "loading" | "form" | "review" | "complete";
 
@@ -28,6 +33,7 @@ export function useInvestorProfileLogic() {
   const navigate = useNavigate();
   const toast = useToast();
   const passReady = walletPassReady;
+  const appleWalletSupported = isAppleWalletSupported();
 
   // Check if user is authenticated and if profile already exists
   useEffect(() => {
@@ -87,27 +93,47 @@ export function useInvestorProfileLogic() {
     setLoading: (value: boolean) => void
   ) => {
     if (!profile) return;
+    if (wallet === "apple" && !appleWalletSupported) {
+      toast({
+        title: "Apple Wallet unavailable",
+        description: APPLE_WALLET_SUPPORT_MESSAGE,
+        status: "info",
+        duration: 4000,
+      });
+      return;
+    }
 
     setLoading(true);
     try {
-      await downloadHushhGoldPass({
-        name: profile.name,
-        email: profile.email,
-        organisation: profile.organisation,
-        slug: profile.slug,
-        userId: profile.user_id,
-      });
+      if (wallet === "apple") {
+        await downloadHushhGoldPass({
+          name: profile.name,
+          email: profile.email,
+          organisation: profile.organisation,
+          slug: profile.slug,
+          userId: profile.user_id,
+        });
+      } else {
+        await launchGoogleWalletPass({
+          name: profile.name,
+          email: profile.email,
+          organisation: profile.organisation,
+          slug: profile.slug,
+          userId: profile.user_id,
+        });
+      }
 
       setWalletPassReady(true);
       toast({
-        title: `Hushh Gold card ready for ${
-          wallet === "apple" ? "Apple Wallet" : "Google Wallet"
-        }`,
+        title:
+          wallet === "apple"
+            ? "Opening Apple Wallet"
+            : "Redirecting to Google Wallet",
         description:
           wallet === "apple"
-            ? "Open the downloaded pass to add it to Apple Wallet."
-            : "Open the downloaded pass to add it to Google Wallet.",
-        status: "success",
+            ? "Open the pass preview to add it to Apple Wallet."
+            : "Complete the save flow in Google Wallet.",
+        status: "info",
         duration: 4000,
       });
     } catch (err) {
@@ -155,7 +181,9 @@ export function useInvestorProfileLogic() {
       });
 
       setStep("complete");
-      await triggerWalletPassDownload("apple", setIsApplePassLoading);
+      if (appleWalletSupported) {
+        await triggerWalletPassDownload("apple", setIsApplePassLoading);
+      }
     } catch (err) {
       console.error("Error confirming profile:", err);
       setError(
@@ -209,6 +237,8 @@ export function useInvestorProfileLogic() {
     userData,
     isApplePassLoading,
     isGooglePassLoading,
+    appleWalletSupported,
+    appleWalletSupportMessage: APPLE_WALLET_SUPPORT_MESSAGE,
     passReady,
     profileUrl,
     handleFormSubmit,

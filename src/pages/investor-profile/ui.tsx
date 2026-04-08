@@ -26,6 +26,8 @@ function InvestorProfilePage() {
     userData,
     isApplePassLoading,
     isGooglePassLoading,
+    appleWalletSupported,
+    appleWalletSupportMessage,
     profileUrl,
     handleFormSubmit,
     handleProfileConfirm,
@@ -144,6 +146,7 @@ function InvestorProfilePage() {
                 <Button
                   aria-label="Add to Apple Wallet"
                   onClick={handleAppleWalletDownload}
+                  isDisabled={!appleWalletSupported}
                   isLoading={isApplePassLoading}
                   loadingText=""
                   spinner={<Spinner size="sm" color="#0B1120" />}
@@ -186,6 +189,11 @@ function InvestorProfilePage() {
                   <Icon as={FaGoogle} boxSize={6} />
                 </Button>
               </HStack>
+              {!appleWalletSupported && (
+                <Text mt={3} fontSize="xs" color="gray.500" textAlign="center">
+                  {appleWalletSupportMessage}
+                </Text>
+              )}
             </Box>
           </VStack>
         </Center>

@@ -26,6 +26,7 @@ describe("onboarding flow helpers", () => {
   it("resumes financial-link continuations from step 1 when no later step exists", () => {
     expect(getFinancialLinkContinuationRoute(0)).toBe("/onboarding/step-1");
     expect(getFinancialLinkContinuationRoute(1)).toBe("/onboarding/step-1");
-    expect(getFinancialLinkContinuationRoute(4)).toBe("/onboarding/step-4");
+    // raw step 4 → combined step-3 after merging country + address steps
+    expect(getFinancialLinkContinuationRoute(4)).toBe("/onboarding/step-3");
   });
 });

@@ -9,12 +9,20 @@ import {
   renderHeroSection,
   renderKeyValueRows,
 } from "../_shared/emailTemplateChrome.ts";
+import { EMAIL_FOOTER_INLINE_ASSET_KEYS, type EmailInlineAssetKey } from "../_shared/emailInlineAssets.ts";
 
 export interface CoinsCreditTemplateData {
   recipientName: string;
   coinsAwarded: number;
   dateLabel: string;
 }
+
+export const COINS_CREDIT_INLINE_ASSET_KEYS: EmailInlineAssetKey[] = [
+  ...EMAIL_FOOTER_INLINE_ASSET_KEYS,
+  "calendar",
+  "bank",
+  "shield",
+];
 
 function formatUsdValue(coinsAwarded: number): string {
   return (coinsAwarded / 100).toLocaleString("en-US", {
@@ -73,16 +81,19 @@ export function buildCoinsCreditEmailHtml({
         ${renderFeatureList([
           {
             glyph: "C",
+            icon: "calendar",
             title: "Book a Consultation",
             description: "Private 1:1 session with Manish Sainani.",
           },
           {
             glyph: "I",
+            icon: "bank",
             title: "Investment Guidance",
             description: "Clear portfolio and strategy advice.",
           },
           {
             glyph: "OK",
+            icon: "shield",
             title: "KYC Verified",
             description: "Identity verified and ready to trade.",
           },
@@ -94,7 +105,7 @@ export function buildCoinsCreditEmailHtml({
         ${renderButtons([
           {
             label: "Activate Your Session",
-            href: "https://www.hushh.ai/onboarding/meet-ceo",
+            href: "https://hushhtech.com/onboarding/meet-ceo",
             variant: "primary",
           },
         ])}

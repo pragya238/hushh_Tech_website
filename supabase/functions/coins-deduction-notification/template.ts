@@ -8,6 +8,7 @@ import {
   renderHeroSection,
   renderKeyValueRows,
 } from "../_shared/emailTemplateChrome.ts";
+import { EMAIL_FOOTER_INLINE_ASSET_KEYS, type EmailInlineAssetKey } from "../_shared/emailInlineAssets.ts";
 
 export interface CoinsDeductionTemplateData {
   coinsDeducted: number;
@@ -15,6 +16,13 @@ export interface CoinsDeductionTemplateData {
   meetingTime: string;
   transactionDate: string;
 }
+
+export const COINS_DEDUCTION_INLINE_ASSET_KEYS: EmailInlineAssetKey[] = [
+  ...EMAIL_FOOTER_INLINE_ASSET_KEYS,
+  "analytics",
+  "quiz",
+  "calendar-check",
+];
 
 function formatUsdValue(coinsDeducted: number): string {
   return (coinsDeducted / 100).toLocaleString("en-US", {
@@ -80,16 +88,19 @@ export function buildCoinsDeductionEmailHtml({
         ${renderFeatureList([
           {
             glyph: "R",
+            icon: "analytics",
             title: "Review your portfolio",
             description: "Have your current investment holdings and goals ready to discuss.",
           },
           {
             glyph: "?",
+            icon: "quiz",
             title: "Prepare questions",
             description: "Write down specific questions about strategies, allocation, or market outlook.",
           },
           {
             glyph: "C",
+            icon: "calendar-check",
             title: "Check your calendar invite",
             description: "A separate calendar invite with the meeting link will be sent shortly.",
           },

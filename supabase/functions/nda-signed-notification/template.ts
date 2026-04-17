@@ -11,6 +11,7 @@ import {
   renderHeroSection,
   renderKeyValueRows,
 } from "../_shared/emailTemplateChrome.ts";
+import { EMAIL_FOOTER_INLINE_ASSET_KEYS, type EmailInlineAssetKey } from "../_shared/emailInlineAssets.ts";
 
 export interface NDATemplateData {
   signerName: string;
@@ -23,6 +24,8 @@ export interface NDATemplateData {
   userId?: string;
   documentsAcknowledged?: string[];
 }
+
+export const NDA_INLINE_ASSET_KEYS: EmailInlineAssetKey[] = [...EMAIL_FOOTER_INLINE_ASSET_KEYS];
 
 function renderSimpleCardBody(contentHtml: string): string {
   return `
@@ -178,7 +181,7 @@ export function buildNDANotificationHtml({
       <div style="padding-top:46px;padding-bottom:54px;">
         <div style="border-top:1px solid #EFEFEF;padding-top:30px;font-family:Inter, Arial, Helvetica, sans-serif;font-size:12px;line-height:1.9;color:${EMAIL_COLORS.mutedText};">
           <strong style="color:${EMAIL_COLORS.bodyText};font-weight:600;">Confidentiality Notice:</strong>
-          This internal notification contains sensitive legal data. Unauthorized disclosure is strictly prohibited.
+          This internal notification contains sensitive legal data. Please keep this confidential. Unauthorized disclosure is strictly prohibited.
         </div>
       </div>
     `)}

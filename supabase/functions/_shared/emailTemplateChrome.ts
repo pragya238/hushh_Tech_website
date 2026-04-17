@@ -1,3 +1,5 @@
+import { getInlineAssetCid, type EmailInlineAssetKey } from "./emailInlineAssets.ts";
+
 export const EMAIL_COLORS = {
   black: "#0D0D0D",
   white: "#FFFFFF",
@@ -34,6 +36,18 @@ export interface FeatureItem {
   glyph: string;
   title: string;
   description: string;
+  icon?: FeatureIcon;
+}
+
+type FeatureIcon = Extract<
+  EmailInlineAssetKey,
+  "calendar" | "bank" | "shield" | "analytics" | "quiz" | "calendar-check"
+>;
+
+type SocialIcon = Extract<EmailInlineAssetKey, "home" | "x" | "youtube" | "linkedin" | "facebook">;
+
+function renderImageIcon(src: string, width: number, height: number): string {
+  return `<img src="${escapeAttribute(src)}" alt="" width="${width}" height="${height}" style="display:block;margin:0 auto;width:${width}px;height:${height}px;border:0;outline:none;text-decoration:none;" />`;
 }
 
 function escapeLineBreaks(value: string): string {
@@ -59,13 +73,24 @@ export function renderEmailDocument(contentHtml: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
   <title>Hushh Email</title>
+  <style>
+    :root {
+      color-scheme: light;
+      supported-color-schemes: light;
+    }
+    body, table, td, div, p, a, span {
+      color-scheme: light;
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;background-color:${EMAIL_COLORS.white};font-family:${FONT_BODY};-webkit-font-smoothing:antialiased;color:${EMAIL_COLORS.bodyText};">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:${EMAIL_COLORS.white};border-collapse:collapse;">
+<body bgcolor="${EMAIL_COLORS.white}" style="margin:0;padding:0;background-color:${EMAIL_COLORS.white};font-family:${FONT_BODY};-webkit-font-smoothing:antialiased;color:${EMAIL_COLORS.bodyText};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${EMAIL_COLORS.white}" style="width:100%;background-color:${EMAIL_COLORS.white};border-collapse:collapse;">
     <tr>
-      <td align="center" style="padding:0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;">
+      <td align="center" bgcolor="${EMAIL_COLORS.white}" style="padding:0;background-color:${EMAIL_COLORS.white};">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${EMAIL_COLORS.white}" style="width:100%;max-width:600px;border-collapse:collapse;background-color:${EMAIL_COLORS.white};">
           ${contentHtml}
         </table>
       </td>
@@ -91,7 +116,7 @@ export function renderBrandBadge(): string {
 export function renderHeroSection(contentHtml: string): string {
   return `
     <tr>
-      <td style="background-color:${EMAIL_COLORS.black};padding:30px 38px 40px 38px;">
+      <td bgcolor="${EMAIL_COLORS.black}" style="background-color:${EMAIL_COLORS.black};padding:30px 38px 40px 38px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
           <tr>
             <td align="right">
@@ -112,7 +137,7 @@ export function renderHeroSection(contentHtml: string): string {
 export function renderBodySection(contentHtml: string, padding = "0 38px"): string {
   return `
     <tr>
-      <td style="background-color:${EMAIL_COLORS.white};padding:${padding};">
+      <td bgcolor="${EMAIL_COLORS.white}" style="background-color:${EMAIL_COLORS.white};padding:${padding};">
         ${contentHtml}
       </td>
     </tr>
@@ -129,16 +154,16 @@ export function renderTextBlock(text: string, opts?: { centered?: boolean; upper
 
 export function renderCard(title: string, bodyHtml: string): string {
   return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border:1px solid ${EMAIL_COLORS.cardBorder};border-radius:14px;overflow:hidden;border-collapse:separate;border-spacing:0;background-color:${EMAIL_COLORS.white};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${EMAIL_COLORS.white}" style="width:100%;border:1px solid ${EMAIL_COLORS.cardBorder};border-radius:14px;overflow:hidden;border-collapse:separate;border-spacing:0;background-color:${EMAIL_COLORS.white};">
       <tr>
-        <td style="padding:13px 18px;background-color:${EMAIL_COLORS.cardHeader};border-bottom:1px solid ${EMAIL_COLORS.cardBorder};">
+        <td bgcolor="${EMAIL_COLORS.cardHeader}" style="padding:13px 18px;background-color:${EMAIL_COLORS.cardHeader};border-bottom:1px solid ${EMAIL_COLORS.cardBorder};">
           <div style="font-family:${FONT_HEADLINE};font-size:11px;line-height:1.2;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:${EMAIL_COLORS.fineText};">
             ${escapeHtml(title)}
           </div>
         </td>
       </tr>
       <tr>
-        <td style="padding:0;background-color:${EMAIL_COLORS.white};">
+        <td bgcolor="${EMAIL_COLORS.white}" style="padding:0;background-color:${EMAIL_COLORS.white};">
           ${bodyHtml}
         </td>
       </tr>
@@ -220,7 +245,7 @@ export function renderFeatureList(items: FeatureItem[]): string {
                       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:44px;height:44px;border:1px solid ${EMAIL_COLORS.cardBorder};border-radius:22px;border-collapse:separate;">
                         <tr>
                           <td align="center" valign="middle" style="font-family:${FONT_HEADLINE};font-size:15px;line-height:1;font-weight:700;color:${EMAIL_COLORS.bodyText};">
-                            ${escapeHtml(item.glyph)}
+                            ${item.icon ? renderFeatureIcon(item.icon) : escapeHtml(item.glyph)}
                           </td>
                         </tr>
                       </table>
@@ -244,11 +269,24 @@ export function renderFeatureList(items: FeatureItem[]): string {
   `;
 }
 
-function renderSocialLink(label: string, url: string, glyph: string): string {
+function renderFeatureIcon(icon: FeatureIcon): string {
+  return renderImageIcon(getInlineAssetCid(icon), 18, 18);
+}
+
+function renderSocialLink(label: string, url: string, icon: SocialIcon): string {
+  const iconHtml = renderImageIcon(getInlineAssetCid(icon), 18, 18);
+  const cellLineHeight = "0";
+
   return `
     <td align="center" style="padding:0 8px 0 8px;">
-      <a href="${escapeAttribute(url)}" title="${escapeAttribute(label)}" style="display:inline-block;width:50px;height:50px;line-height:50px;border-radius:25px;border:1px solid #2D2D2D;background-color:#171717;color:${EMAIL_COLORS.white};font-family:${FONT_HEADLINE};font-size:${glyph === "in" ? "16px" : "20px"};font-weight:700;text-align:center;text-decoration:none;">
-        ${escapeHtml(glyph)}
+      <a href="${escapeAttribute(url)}" title="${escapeAttribute(label)}" style="display:inline-block;text-decoration:none;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:40px;height:40px;border:1px solid #2D2D2D;border-radius:20px;border-collapse:separate;background-color:#171717;">
+          <tr>
+            <td align="center" valign="middle" style="width:40px;height:40px;line-height:${cellLineHeight};">
+              ${iconHtml}
+            </td>
+          </tr>
+        </table>
       </a>
     </td>
   `;
@@ -259,17 +297,17 @@ export function renderFooter(): string {
 
   return `
     <tr>
-      <td style="background-color:${EMAIL_COLORS.black};padding:44px 38px 52px 38px;">
+      <td bgcolor="${EMAIL_COLORS.black}" style="background-color:${EMAIL_COLORS.black};padding:44px 38px 52px 38px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
           <tr>
             <td align="center">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
                 <tr>
-                  ${renderSocialLink("Hushh Main Site", "https://www.hushh.ai", "⌂")}
-                  ${renderSocialLink("X", "https://twitter.com/hushh_ai", "X")}
-                  ${renderSocialLink("YouTube", "https://www.youtube.com/@hushhai", "▶")}
-                  ${renderSocialLink("LinkedIn", "https://www.linkedin.com/company/hushh-ai/", "in")}
-                  ${renderSocialLink("Facebook", "https://www.facebook.com/hushhaiplatform", "f")}
+                  ${renderSocialLink("Hushh Main Site", "https://www.hushh.ai", "home")}
+                  ${renderSocialLink("X", "https://twitter.com/hushh_ai", "x")}
+                  ${renderSocialLink("YouTube", "https://www.youtube.com/@hushhai", "youtube")}
+                  ${renderSocialLink("LinkedIn", "https://www.linkedin.com/company/hushh-ai/", "linkedin")}
+                  ${renderSocialLink("Facebook", "https://www.facebook.com/hushhaiplatform", "facebook")}
                 </tr>
               </table>
             </td>

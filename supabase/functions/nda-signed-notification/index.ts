@@ -3,7 +3,9 @@
 // Uses Gmail API with Service Account (Domain-Wide Delegation)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { buildNDANotificationHtml } from "./template.ts";
+import { collectInlineAssets } from "../_shared/emailInlineAssets.ts";
+import { base64urlEncode, createMixedEmailMessage, createRelatedEmailMessage } from "../_shared/emailMime.ts";
+import { buildNDANotificationHtml, NDA_INLINE_ASSET_KEYS } from "./template.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,13 +30,6 @@ interface NDANotificationPayload {
   pdfBase64?: string;
   userId?: string;
   documentsAcknowledged?: string[];
-}
-
-// Base64URL encoding utilities
-function base64urlEncode(data: Uint8Array | string): string {
-  const bytes = typeof data === "string" ? new TextEncoder().encode(data) : data;
-  let base64 = btoa(String.fromCharCode(...bytes));
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 /**
@@ -124,18 +119,6 @@ async function getAccessToken(
 }
 
 /**
- * Encode content to base64 with line breaks
- */
-function encodeBase64WithLineBreaks(content: string): string {
-  const base64 = btoa(unescape(encodeURIComponent(content)));
-  const lines: string[] = [];
-  for (let i = 0; i < base64.length; i += 76) {
-    lines.push(base64.slice(i, i + 76));
-  }
-  return lines.join("\r\n");
-}
-
-/**
  * Create RFC 2822 formatted email with optional PDF attachment
  */
 function createEmailMessage(
@@ -146,43 +129,34 @@ function createEmailMessage(
   pdfBase64?: string,
   pdfFileName?: string
 ): string {
-  const boundary = `boundary_${Date.now()}`;
-  const encodedHtml = encodeBase64WithLineBreaks(htmlContent);
-  
-  const emailLines = [
-    `From: Hushh NDA Notifications <${from}>`,
-    `To: ${recipients.join(", ")}`,
-    `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
-  ];
+  const inlineAssets = collectInlineAssets(NDA_INLINE_ASSET_KEYS);
 
   if (pdfBase64 && pdfFileName) {
-    // Email with attachment
-    emailLines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
-    emailLines.push(``);
-    emailLines.push(`--${boundary}`);
-    emailLines.push(`Content-Type: text/html; charset="UTF-8"`);
-    emailLines.push(`Content-Transfer-Encoding: base64`);
-    emailLines.push(``);
-    emailLines.push(encodedHtml);
-    emailLines.push(``);
-    emailLines.push(`--${boundary}`);
-    emailLines.push(`Content-Type: application/pdf; name="${pdfFileName}"`);
-    emailLines.push(`Content-Disposition: attachment; filename="${pdfFileName}"`);
-    emailLines.push(`Content-Transfer-Encoding: base64`);
-    emailLines.push(``);
-    emailLines.push(pdfBase64);
-    emailLines.push(``);
-    emailLines.push(`--${boundary}--`);
-  } else {
-    // Email without attachment
-    emailLines.push(`Content-Type: text/html; charset="UTF-8"`);
-    emailLines.push(`Content-Transfer-Encoding: base64`);
-    emailLines.push(``);
-    emailLines.push(encodedHtml);
+    return createMixedEmailMessage({
+      fromLabel: "Hushh NDA Notifications",
+      fromEmail: from,
+      recipients,
+      subject,
+      htmlContent,
+      inlineAssets,
+      attachments: [
+        {
+          filename: pdfFileName,
+          mimeType: "application/pdf",
+          base64Data: pdfBase64,
+        },
+      ],
+    });
   }
 
-  return emailLines.join("\r\n");
+  return createRelatedEmailMessage({
+    fromLabel: "Hushh NDA Notifications",
+    fromEmail: from,
+    recipients,
+    subject,
+    htmlContent,
+    inlineAssets,
+  });
 }
 
 /**

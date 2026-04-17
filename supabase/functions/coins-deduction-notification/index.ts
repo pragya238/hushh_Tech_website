@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { buildCoinsDeductionEmailHtml } from "./template.ts";
+import { collectInlineAssets } from "../_shared/emailInlineAssets.ts";
+import { base64urlEncode, createRelatedEmailMessage } from "../_shared/emailMime.ts";
+import { buildCoinsDeductionEmailHtml, COINS_DEDUCTION_INLINE_ASSET_KEYS } from "./template.ts";
 
 /**
  * Coins Deduction Notification — Sends email when coins are used for meeting booking
@@ -13,12 +15,6 @@ const corsHeaders = {
 };
 
 // ─── Gmail API Helpers ───
-
-function base64urlEncode(data: Uint8Array | string): string {
-  const bytes = typeof data === "string" ? new TextEncoder().encode(data) : data;
-  let base64 = btoa(String.fromCharCode(...bytes));
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
 
 async function createSignedJWT(
   serviceAccountEmail: string, privateKey: string,
@@ -67,19 +63,6 @@ async function getAccessToken(
   return (await response.json()).access_token;
 }
 
-function encodeSubject(subject: string): string {
-  if (/^[\x20-\x7E]*$/.test(subject)) return subject;
-  const encoded = btoa(unescape(encodeURIComponent(subject)));
-  return `=?UTF-8?B?${encoded}?=`;
-}
-
-function encodeBase64WithLineBreaks(content: string): string {
-  const base64 = btoa(unescape(encodeURIComponent(content)));
-  const lines: string[] = [];
-  for (let i = 0; i < base64.length; i += 76) lines.push(base64.slice(i, i + 76));
-  return lines.join("\r\n");
-}
-
 async function sendGmailEmail(
   recipients: string[], subject: string, htmlContent: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
@@ -92,16 +75,14 @@ async function sendGmailEmail(
     }
     const formattedPrivateKey = privateKey.replace(/\\n/g, "\n");
     const accessToken = await getAccessToken(serviceAccountEmail, formattedPrivateKey, senderEmail);
-    const rawMessage = [
-      `From: Hushh Coins <${senderEmail}>`,
-      `To: ${recipients.join(", ")}`,
-      `Subject: ${encodeSubject(subject)}`,
-      `MIME-Version: 1.0`,
-      `Content-Type: text/html; charset="UTF-8"`,
-      `Content-Transfer-Encoding: base64`,
-      ``,
-      encodeBase64WithLineBreaks(htmlContent),
-    ].join("\r\n");
+    const rawMessage = createRelatedEmailMessage({
+      fromLabel: "Hushh Coins",
+      fromEmail: senderEmail,
+      recipients,
+      subject,
+      htmlContent,
+      inlineAssets: collectInlineAssets(COINS_DEDUCTION_INLINE_ASSET_KEYS),
+    });
     const response = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`,
       {

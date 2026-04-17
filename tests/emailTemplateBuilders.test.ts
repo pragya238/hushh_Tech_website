@@ -9,6 +9,10 @@ function expectEmailSafeMarkup(html: string) {
   expect(html).not.toMatch(/fonts\.googleapis/i);
   expect(html).not.toMatch(/material-symbols/i);
   expect(html).not.toMatch(/hover:/i);
+  expect(html).not.toContain("<svg");
+  expect(html).not.toContain("https://hushhtech.com/images/email-icons/");
+  expect(html).toContain('name="color-scheme" content="light"');
+  expect(html).toContain('name="supported-color-schemes" content="light"');
 }
 
 describe("Email template builders", () => {
@@ -36,6 +40,10 @@ describe("Email template builders", () => {
     expect(html).toContain("https://hushhtech.com/nda-admin?highlight=e824f66e-8066-4a17-b588-982e8c5c4729");
     expect(html).toContain("https://hushhtech.com/nda-admin");
     expect(html).toContain("https://www.linkedin.com/company/hushh-ai/");
+    expect(html).toContain("https://www.facebook.com/hushhaiplatform");
+    expect(html).toContain("Please keep this confidential.");
+    expect(html).toContain("cid:hushh-icon-home");
+    expect(html).toContain("cid:hushh-icon-facebook");
     expectEmailSafeMarkup(html);
   });
 
@@ -68,8 +76,14 @@ describe("Email template builders", () => {
     expect(html).toContain("Investment Guidance");
     expect(html).toContain("KYC Verified");
     expect(html).toContain("Activate Your Session");
-    expect(html).toContain("https://www.hushh.ai/onboarding/meet-ceo");
+    expect(html).toContain("https://hushhtech.com/onboarding/meet-ceo");
     expect(html).toContain("Hushh Coins are for internal ecosystem use only.");
+    expect(html).toContain("cid:hushh-icon-calendar");
+    expect(html).toContain("cid:hushh-icon-bank");
+    expect(html).toContain("cid:hushh-icon-shield");
+    expect(html).not.toContain(">C<");
+    expect(html).not.toContain(">I<");
+    expect(html).not.toContain(">OK<");
     expectEmailSafeMarkup(html);
   });
 
@@ -88,7 +102,13 @@ describe("Email template builders", () => {
     expect(html).toContain("Prepare For Your Session");
     expect(html).toContain("Review your portfolio");
     expect(html).toContain("Check your calendar invite");
+    expect(html).toContain("cid:hushh-icon-analytics");
+    expect(html).toContain("cid:hushh-icon-quiz");
+    expect(html).toContain("cid:hushh-icon-calendar-check");
     expect(html).not.toContain("Activate Your Session");
+    expect(html).not.toContain(">R<");
+    expect(html).not.toContain(">?<");
+    expect(html).not.toContain(">C<");
     expect(html).toContain("https://www.youtube.com/@hushhai");
     expectEmailSafeMarkup(html);
   });

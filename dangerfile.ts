@@ -29,17 +29,22 @@ const CONFIG = {
   
   // Sensitive patterns to check for
   sensitivePatterns: [
-    /api[_-]?key\s*[:=]/i,
-    /secret[_-]?key\s*[:=]/i,
-    /password\s*[:=]/i,
-    /private[_-]?key\s*[:=]/i,
-    /access[_-]?token\s*[:=]/i,
-    /auth[_-]?token\s*[:=]/i,
-    /Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+/,
-    /sk_live_[A-Za-z0-9]+/,  // Stripe live key
-    /sk_test_[A-Za-z0-9]+/,  // Stripe test key
-    /AKIA[A-Z0-9]{16}/,       // AWS Access Key
-  ],
+  /api[_-]?key\s*[:=]/i,
+  /secret[_-]?key\s*[:=]/i,
+  /password\s*[:=]/i,
+  /private[_-]?key\s*[:=]/i,
+  /access[_-]?token\s*[:=]/i,
+  /auth[_-]?token\s*[:=]/i,
+  /Bearer\s+[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+/,
+  /sk_live_[A-Za-z0-9]+/,
+  /sk_test_[A-Za-z0-9]+/,
+  /AKIA[A-Z0-9]{16}/,
+
+  /VITE_GEMINI_API_KEY/,
+  /VITE_OPENAI_API_KEY/,
+  /import\.meta\.env\.VITE_GEMINI/,
+  /import\.meta\.env\.VITE_OPENAI/,
+],
   
   // Files that should trigger extra review
   criticalFiles: [

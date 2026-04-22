@@ -69,6 +69,11 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
+  // Block requests from disallowed origins
+  if (!isAllowedOrigin(origin)) {
+    return res.status(403).json({ error: 'Origin not allowed' });
+  }
+
   // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });

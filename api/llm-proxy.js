@@ -49,6 +49,8 @@ function isAllowedOrigin(origin) {
   if (!origin) return false;
   return ALLOWED_ORIGINS.includes(origin);
 }
+
+export default async function handler(req, res) {
   const origin = req.headers.origin || '';
   res.setHeader('Vary', 'Origin');
 
@@ -58,69 +60,7 @@ function isAllowedOrigin(origin) {
   }
 
   // Origin is allowed, set CORS headers for the response.
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // Handle CORS preflight.
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
-  // Only allow POST.
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { provider, model, payload } = req.body || {};
-
-  if (!provider || !payload) {
-    return res.status(400).json({ error: 'Missing required fields: provider, payload' });
-  }
-
-  try {
-    if (provider === 'gemini') {
-      const apiKey = getGeminiKey();
-      if (!apiKey) {
-        return res.status(503).json({ error: 'Gemini service unavailable' });
-      }
-
-      const geminiModel = model || 'gemini-2.0-flash';
-      const url = `${GEMINI_ENDPOINT}/${geminiModel}:generateContent`;
-
-      const upstream = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await upstream.json();
-      return res.status(upstream.status).json(data);
-    }
-
-    if (provider === 'openai') {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        return res.status(503).json({ error: 'OpenAI service unavailable' });
-      }
-
-      const upstream = await fetch(OPENAI_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await upstream.json();
-      return res.status(upstream.status).json(data);
-    }
-
-    return res.status(400).json({ error: `Unsupported provider: ${provider}` });
+...
   } catch (err) {
     console.error('[llm-proxy] Upstream error:', err?.message || err);
     return res.status(502).json({ error: 'Upstream LLM request failed' });

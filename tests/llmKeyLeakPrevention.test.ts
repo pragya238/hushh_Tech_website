@@ -70,6 +70,7 @@ function collectFiles(dir: string): string[] {
 describe('LLM API key browser-exposure prevention', () => {
   it('src/ must not reference VITE_GEMINI_API_KEY (would expose key in JS bundle)', () => {
     const files = collectFiles('src');
+    expect(files.length).toBeGreaterThan(0, 'Test failed: No source files found to scan in src/.');
     const violations: string[] = [];
 
     for (const file of files) {

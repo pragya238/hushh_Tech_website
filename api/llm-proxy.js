@@ -59,22 +59,25 @@ export default async function handler(req, res) {
   // CORS: only allow requests from known Hushh origins
   if (isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const origin = req.headers.origin || '';
   res.setHeader('Vary', 'Origin');
 
-  // Handle CORS preflight
+  // Enforce origin policy before any other processing.
+  if (!isAllowedOrigin(origin)) {
+    return res.status(403).json({ error: 'Forbidden: Invalid origin' });
+  }
+
+  // Origin is allowed, set CORS headers for the response.
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle CORS preflight.
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
 
-  // Block requests from disallowed origins
-  if (!isAllowedOrigin(origin)) {
-    return res.status(403).json({ error: 'Origin not allowed' });
-  }
-
-  // Only allow POST
+  // Only allow POST.
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

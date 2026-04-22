@@ -49,11 +49,6 @@ function isAllowedOrigin(origin) {
   if (!origin) return false;
   return ALLOWED_ORIGINS.includes(origin);
 }
-
-/**
- * Main Vercel serverless handler.
- */
-export default async function handler(req, res) {
   const origin = req.headers.origin || '';
   res.setHeader('Vary', 'Origin');
 

@@ -55,11 +55,6 @@ function isAllowedOrigin(origin) {
  */
 export default async function handler(req, res) {
   const origin = req.headers.origin || '';
-
-  // CORS: only allow requests from known Hushh origins
-  if (isAllowedOrigin(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  const origin = req.headers.origin || '';
   res.setHeader('Vary', 'Origin');
 
   // Enforce origin policy before any other processing.

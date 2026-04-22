@@ -88,11 +88,14 @@ export default async function handler(req, res) {
       }
 
       const geminiModel = model || 'gemini-2.0-flash';
-      const url = `${GEMINI_ENDPOINT}/${geminiModel}:generateContent?key=${apiKey}`;
+      const url = `${GEMINI_ENDPOINT}/${geminiModel}:generateContent`;
 
       const upstream = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
         body: JSON.stringify(payload),
       });
 

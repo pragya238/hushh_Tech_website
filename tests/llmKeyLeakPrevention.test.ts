@@ -77,8 +77,8 @@ describe('LLM API key browser-exposure prevention', () => {
       let content: string;
       try {
         content = readFileSync(file, 'utf-8');
-      } catch {
-        continue;
+      } catch (e) {
+        throw new Error(`Failed to read file ${file}: ${(e as Error).message}`);
       }
 
       for (const pattern of FORBIDDEN_PATTERNS) {

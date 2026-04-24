@@ -46,36 +46,22 @@ function getGeminiKey() {
  * Validates that the request origin is an allowed Hushh domain.
  */
 function isAllowedOrigin(origin) {
-function isAllowedOrigin(origin) {
-  // Allow same-origin (no origin header) or whitelisted cross-origin requests.
-  if (!origin) return true;
+  // Stricter check: only allow requests from whitelisted origins.
+  if (!origin) return false;
   return ALLOWED_ORIGINS.includes(origin);
 }
 
 export default async function handler(req, res) {
-  const origin = req.headers.origin;
+  const origin = req.headers.origin || '';
   res.setHeader('Vary', 'Origin');
 
   // Enforce origin policy before any other processing.
   if (!isAllowedOrigin(origin)) {
     return res.status(403).json({ error: 'Forbidden: Invalid origin' });
   }
-  function isAllowedOrigin(origin) {
-    if (!origin) return false;
-    return ALLOWED_ORIGINS.includes(origin);
-  }
 
-  export default async function handler(req, res) {
-    const origin = req.headers.origin || '';
-    res.setHeader('Vary', 'Origin');
-
-    // Enforce origin policy before any other processing.
-    if (!isAllowedOrigin(origin)) {
-      return res.status(403).json({ error: 'Forbidden: Invalid origin' });
-    }
-
-    // Origin is allowed, set CORS headers for the response.
-  ...
+  // Origin is allowed, set CORS headers for the response.
+  // ... (rest of handler logic)
     } catch (err) {
       console.error('[llm-proxy] Upstream error:', err?.message || err);
       return res.status(502).json({ error: 'Upstream LLM request failed' });

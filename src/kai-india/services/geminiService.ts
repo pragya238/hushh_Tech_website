@@ -1,4 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
 import { MarketData, AdvisorResult, MarketItem } from "../types";
 
 // Helper to sanitize JSON strings if the model returns markdown code blocks
@@ -23,39 +22,52 @@ const isValidMarketItem = (item: MarketItem): boolean => {
   return true;
 };
 
-let aiClient: GoogleGenAI | null = null;
-
-const getAiClient = (): GoogleGenAI => {
-  if (aiClient) {
-    return aiClient;
+/**
+ * Server-side proxy call for Gemini generateContent requests.
+ * Routes through /api/llm-proxy so GEMINI_API_KEY never reaches the browser bundle.
+ */
+const callGeminiProxy = async (model: string, prompt: string, tools?: any[]): Promise<any> => {
+  const payload: any = {
+    model,
+    contents: prompt,
+  };
+  if (tools) {
+    payload.config = { tools };
   }
 
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error("Kai India is unavailable because VITE_GEMINI_API_KEY is not configured.");
+  const response = await fetch('/api/llm-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider: 'gemini', model, payload }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw Object.assign(new Error(err.error || `Proxy error ${response.status}`), {
+      status: response.status,
+      code: response.status,
+    });
   }
 
-  aiClient = new GoogleGenAI({ apiKey });
-  return aiClient;
+  const data = await response.json();
+
+  // Normalise: return an object with a .text property matching the SDK shape
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? data?.text ?? '';
+  return { text };
 };
 
 // Retry wrapper for API calls with exponential backoff
 const generateWithRetry = async (model: string, prompt: string, tools?: any[]) => {
   let retries = 3;
   let delay = 2000;
-  const ai = getAiClient();
 
   while (true) {
     try {
-      return await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: tools ? { tools } : undefined
-      });
+      return await callGeminiProxy(model, prompt, tools);
     } catch (error: any) {
-      const isQuotaError = error?.status === 429 || 
-                           error?.code === 429 || 
-                           error?.message?.includes('429') || 
+      const isQuotaError = error?.status === 429 ||
+                           error?.code === 429 ||
+                           error?.message?.includes('429') ||
                            error?.message?.includes('quota') ||
                            error?.message?.includes('RESOURCE_EXHAUSTED');
 
@@ -66,7 +78,7 @@ const generateWithRetry = async (model: string, prompt: string, tools?: any[]) =
         delay *= 2;
         continue;
       }
-      
+
       throw error;
     }
   }

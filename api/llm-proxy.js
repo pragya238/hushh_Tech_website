@@ -58,11 +58,24 @@ export default async function handler(req, res) {
   if (!isAllowedOrigin(origin)) {
     return res.status(403).json({ error: 'Forbidden: Invalid origin' });
   }
-
-  // Origin is allowed, set CORS headers for the response.
-...
-  } catch (err) {
-    console.error('[llm-proxy] Upstream error:', err?.message || err);
-    return res.status(502).json({ error: 'Upstream LLM request failed' });
+  function isAllowedOrigin(origin) {
+    if (!origin) return false;
+    return ALLOWED_ORIGINS.includes(origin);
   }
-}
+
+  export default async function handler(req, res) {
+    const origin = req.headers.origin || '';
+    res.setHeader('Vary', 'Origin');
+
+    // Enforce origin policy before any other processing.
+    if (!isAllowedOrigin(origin)) {
+      return res.status(403).json({ error: 'Forbidden: Invalid origin' });
+    }
+
+    // Origin is allowed, set CORS headers for the response.
+  ...
+    } catch (err) {
+      console.error('[llm-proxy] Upstream error:', err?.message || err);
+      return res.status(502).json({ error: 'Upstream LLM request failed' });
+    }
+  }

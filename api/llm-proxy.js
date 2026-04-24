@@ -46,13 +46,14 @@ function getGeminiKey() {
  * Validates that the request origin is an allowed Hushh domain.
  */
 function isAllowedOrigin(origin) {
-  function isAllowedOrigin(origin) {
-    // Allow same-origin requests (where the origin header is not present)
-    if (!origin) return true;
-    return ALLOWED_ORIGINS.includes(origin);
-  }
+function isAllowedOrigin(origin) {
+  // Allow same-origin (no origin header) or whitelisted cross-origin requests.
+  if (!origin) return true;
+  return ALLOWED_ORIGINS.includes(origin);
+}
+
 export default async function handler(req, res) {
-  const origin = req.headers.origin || '';
+  const origin = req.headers.origin;
   res.setHeader('Vary', 'Origin');
 
   // Enforce origin policy before any other processing.

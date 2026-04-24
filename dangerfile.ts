@@ -41,10 +41,11 @@ const CONFIG = {
   /AKIA[A-Z0-9]{16}/,
 
   /VITE_GEMINI_API_KEY/,
+  /VITE_GEMINI_API_KEY/,
+  /VITE_GEMINI_API_KEY_FALLBACK_\d+/,
   /VITE_OPENAI_API_KEY/,
   /import\.meta\.env\.VITE_GEMINI/,
   /import\.meta\.env\.VITE_OPENAI/,
-],
   
   // Files that should trigger extra review
   criticalFiles: [

@@ -35,8 +35,8 @@ const ALLOWED_ORIGINS = [
  * Validates that the request origin is an allowed Hushh domain.
  */
 function isAllowedOrigin(origin) {
-  // Allow same-origin (no origin header) or whitelisted cross-origin requests.
-  // Deny requests with no origin header for better security.
+function isAllowedOrigin(origin) {
+  // Deny requests that are not from an allowed origin.
   if (!origin) return false;
   return ALLOWED_ORIGINS.includes(origin);
 }

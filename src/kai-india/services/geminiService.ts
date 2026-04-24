@@ -28,11 +28,10 @@ const isValidMarketItem = (item: MarketItem): boolean => {
  */
 const callGeminiProxy = async (model: string, prompt: string, tools?: any[]): Promise<any> => {
   const payload: any = {
-    model,
-    contents: prompt,
+    contents: [{ parts: [{ text: prompt }] }],
   };
   if (tools) {
-    payload.config = { tools };
+    payload.tools = tools;
   }
 
   const response = await fetch('/api/llm-proxy', {

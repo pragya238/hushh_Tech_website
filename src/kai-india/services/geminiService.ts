@@ -26,7 +26,6 @@ const isValidMarketItem = (item: MarketItem): boolean => {
  * Server-side proxy call for Gemini generateContent requests.
  * Routes through /api/llm-proxy so GEMINI_API_KEY never reaches the browser bundle.
  */
-const callGeminiProxy = async (model: string, prompt: string, tools?: any[]): Promise<any> => {
   const payload: any = {
     contents: [{ parts: [{ text: prompt }] }],
   };

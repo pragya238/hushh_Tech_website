@@ -31,28 +31,18 @@ const ALLOWED_ORIGINS = [
 /**
  * Returns the first available Gemini API key from the environment.
  * Tries primary key then fallbacks in order.
- */
-function getGeminiKey() {
-  return (
-    process.env.GEMINI_API_KEY ||
-    process.env.GEMINI_API_KEY_FALLBACK_1 ||
-    process.env.GEMINI_API_KEY_FALLBACK_2 ||
-    process.env.GEMINI_API_KEY_FALLBACK_3 ||
-    null
-  );
-}
-
 /**
  * Validates that the request origin is an allowed Hushh domain.
  */
 function isAllowedOrigin(origin) {
-  // Stricter check: only allow requests from whitelisted origins.
+  // Allow same-origin (no origin header) or whitelisted cross-origin requests.
+  // Deny requests with no origin header for better security.
   if (!origin) return false;
   return ALLOWED_ORIGINS.includes(origin);
 }
 
 export default async function handler(req, res) {
-  const origin = req.headers.origin || '';
+  const origin = req.headers.origin;
   res.setHeader('Vary', 'Origin');
 
   // Enforce origin policy before any other processing.
@@ -61,9 +51,4 @@ export default async function handler(req, res) {
   }
 
   // Origin is allowed, set CORS headers for the response.
-  // ... (rest of handler logic)
-    } catch (err) {
-      console.error('[llm-proxy] Upstream error:', err?.message || err);
-      return res.status(502).json({ error: 'Upstream LLM request failed' });
-    }
-  }
+  ...

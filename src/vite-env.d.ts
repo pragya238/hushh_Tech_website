@@ -11,13 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_MARKET_SUPABASE_URL?: string;
   readonly VITE_MARKET_SUPABASE_KEY?: string;
 
-  // Gemini API Keys (with fallback support)
-  readonly VITE_GEMINI_API_KEY: string;
-  readonly VITE_GEMINI_API_KEY_FALLBACK_1?: string;
-  readonly VITE_GEMINI_API_KEY_FALLBACK_2?: string;
-  readonly VITE_GEMINI_API_KEY_FALLBACK_3?: string;
-
-  // OpenAI
+  // OpenAI (browser-exposed only for insecure dev mode — use /api/llm-proxy in production)
   readonly VITE_OPENAI_API_KEY?: string;
   readonly VITE_ALLOW_INSECURE_BROWSER_LLM?: string;
 

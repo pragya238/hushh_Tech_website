@@ -50,8 +50,13 @@ const isValidMarketItem = (item: MarketItem): boolean => {
   const data = await response.json();
 
   // Normalise: return an object with a .text property matching the SDK shape
+  // Normalise: return an object with a .response.text() method matching the SDK shape
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? data?.text ?? '';
-  return { text };
+  return {
+    response: {
+      text: () => text,
+    },
+  };
 };
 
 // Retry wrapper for API calls with exponential backoff

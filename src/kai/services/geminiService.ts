@@ -76,14 +76,50 @@ export class GeminiService {
   }
 
   /**
-   * Connect to Gemini Live API with specified persona
+   * Fetches a Gemini WebSocket URL from the server-side ephemeral token route.
+   * Keys are never exposed to the browser — the API route reads GEMINI_API_KEY
+   * from the server runtime environment only.
+   */
+  private async fetchWsUrl(): Promise<string> {
+    const response = await fetch('/api/gemini-ephemeral-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: 'en-US' }),
+    });
+    if (!response.ok) {
+      throw new Error(`Ephemeral token request failed: ${response.status}`);
+    }
+    const data = await response.json();
+    if (!data.wsUrl) {
+      throw new Error('No wsUrl returned from ephemeral token route');
+    }
+    return data.wsUrl;
+  }
+
+  /**
+   * Connect to Gemini Live API with specified persona.
+   * API key is fetched server-side via /api/gemini-ephemeral-token —
+   * it is never embedded in the client bundle.
    */
   async connect(persona: UserPersona = 'Everyday Investor') {
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+      // Fetch the WebSocket URL (with key) from server-side route
+      let wsUrl: string;
+      try {
+        wsUrl = await this.fetchWsUrl();
+      } catch (err) {
+        console.error("Failed to fetch Gemini session URL:", err);
+        this.config.onStatusChange("Service Unavailable");
+        this.config.onConnectionStateChange(ConnectionState.ERROR);
+        return;
+      }
+
+      // Extract apiKey from wsUrl for GoogleGenAI constructor
+      const urlParams = new URLSearchParams(wsUrl.split('?')[1] || '');
+      const apiKey = urlParams.get('key') || '';
       if (!apiKey) {
-        console.error("Gemini API Key not found");
-        this.config.onStatusChange("API Key Missing");
+        console.error("No API key in ephemeral token response");
+        this.config.onStatusChange("Service Unavailable");
         this.config.onConnectionStateChange(ConnectionState.ERROR);
         return;
       }

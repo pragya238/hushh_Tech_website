@@ -44,8 +44,8 @@ function collectFiles(dir: string): string[] {
 
   try {
     entries = readdirSync(dir);
-  } catch {
-    return results;
+  } catch (e) {
+    throw new Error(`Failed to read directory ${dir}: ${(e as Error).message}`);
   }
 
   for (const entry of entries) {
@@ -54,8 +54,8 @@ function collectFiles(dir: string): string[] {
     let stat;
     try {
       stat = statSync(fullPath);
-    } catch {
-      continue;
+    } catch (e) {
+      throw new Error(`Failed to stat path ${fullPath}: ${(e as Error).message}`);
     }
     if (stat.isDirectory()) {
       results.push(...collectFiles(fullPath));
